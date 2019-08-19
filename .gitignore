@@ -1,0 +1,4 @@
+
+build/classes/config.properties
+build/classes/responses/config.properties
+WebContent/WEB-INF/config.properties
