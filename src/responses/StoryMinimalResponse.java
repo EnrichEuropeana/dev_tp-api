@@ -147,7 +147,8 @@ public class StoryMinimalResponse {
 				"								SELECT MIN(ItemId) FROM Item GROUP BY StoryId\r\n" + 
 				"							) LIMIT 25 " + offset +
 				"						) i " +
-				" 					ON s.StoryId = i.StoryId";
+				" 					ON s.StoryId = i.StoryId " + 
+				"				    ORDER BY StoryId DESC";
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
 		//ResponseBuilder rBuild = Response.ok(query);
