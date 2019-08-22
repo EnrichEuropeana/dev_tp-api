@@ -107,6 +107,7 @@ public class TranscriptionResponse {
 			  Transcription transcription = new Transcription();
 			  transcription.setTranscriptionId(rs.getInt("TranscriptionId"));
 			  transcription.setText(rs.getString("Text"));
+			  transcription.setTextNoTags(rs.getString("TextNoTags"));
 			  transcription.setTimestamp(rs.getString("Timestamp"));
 			  transcription.setUserId(rs.getInt("UserId"));
 			  transcription.setWP_UserId(rs.getInt("WP_UserId"));
@@ -165,6 +166,7 @@ public class TranscriptionResponse {
 		String query = "SELECT \r\n" + 
 				"    t.TranscriptionId,\r\n" + 
 				"    t.Text,\r\n" + 
+				"    t.TextNoTags,\r\n" + 
 				"    t.Timestamp,\r\n" + 
 				"    t.UserId,\r\n" + 
 				"    t.ItemId,\r\n" + 
@@ -275,8 +277,9 @@ public class TranscriptionResponse {
 	    							+ "WHERE ItemId = " + transcription.ItemId;
 				String updateResponse = executeQuery(updateQuery, "Update");
 	    	}
-			String query = "INSERT INTO Transcription (Text, UserId, ItemId, CurrentVersion, NoText) "
+			String query = "INSERT INTO Transcription (Text, TextNoTags, UserId, ItemId, CurrentVersion, NoText) "
 							+ "VALUES ('" + transcription.Text + "'"
+								+ ", '" + transcription.TextNoTags + "'"
 								+ ", (SELECT UserId FROM User "
 								+ "		WHERE WP_UserId = " + transcription.UserId + ")"
 								+ ", " + transcription.ItemId
@@ -323,6 +326,7 @@ public class TranscriptionResponse {
 		String query = "SELECT \r\n" + 
 				"    t.TranscriptionId,\r\n" + 
 				"    t.Text,\r\n" + 
+				"    t.TextNoTags,\r\n" + 
 				"    t.Timestamp,\r\n" + 
 				"    t.UserId,\r\n" + 
 				"    t.ItemId,\r\n" + 

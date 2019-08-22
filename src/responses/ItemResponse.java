@@ -148,6 +148,7 @@ public class ItemResponse {
 			  if (rs.getString("TranscriptionId") != null) {				  
 				  String[] TranscriptionIds = rs.getString("TranscriptionId").split("&~&");
 				  String[] TranscriptionTexts = rs.getString("TranscriptionText").split("&~&");
+				  String[] TranscriptionTextNoTags = rs.getString("TranscriptionTextNoTags").split("&~&");
 				  String[] TranscriptionUserIds = rs.getString("TranscriptionUserId").split("&~&");
 				  String[] TranscriptionCurrentVersions = rs.getString("TranscriptionCurrentVersion").split("&~&");
 				  String[] TranscriptionTimestamps = rs.getString("TranscriptionTimestamp").split("&~&");
@@ -183,6 +184,7 @@ public class ItemResponse {
 					  Transcription transcription = new Transcription();
 					  transcription.setTranscriptionId(Integer.parseInt(TranscriptionIds[i]));
 					  transcription.setText(TranscriptionTexts[i]);
+					  transcription.setTextNoTags(TranscriptionTextNoTags[i]);
 					  transcription.setUserId(Integer.parseInt(TranscriptionUserIds[i]));
 					  transcription.setCurrentVersion(TranscriptionCurrentVersions[i]);
 				      transcription.setTimestamp(TranscriptionTimestamps[i]);
@@ -499,6 +501,7 @@ public class ItemResponse {
 				"    c.PlaceUserGenerated as PlaceUserGenerated,\r\n" + 
 				"    d.TranscriptionId as TranscriptionId,\r\n" + 
 				"    d.TranscriptionText as TranscriptionText,\r\n" + 
+				"    d.TranscriptionTextNoTags as TranscriptionTextNoTags,\r\n" + 
 				"    d.TranscriptionUserId as TranscriptionUserId,\r\n" + 
 				"    d.TranscriptionCurrentVersion as TranscriptionCurrentVersion,\r\n" + 
 				"    d.TranscriptionTimestamp as TranscriptionTimestamp,\r\n" + 
@@ -675,6 +678,7 @@ public class ItemResponse {
 				"SELECT i.ItemId as ItemId" +
 				", group_concat(t.TranscriptionId SEPARATOR '&~&') as TranscriptionId " +
 				", group_concat(t.Text SEPARATOR '&~&') as TranscriptionText " +
+				", group_concat(t.TextNoTags SEPARATOR '&~&') as TranscriptionTextNoTags " +
 				", group_concat(t.UserId SEPARATOR '&~&') as TranscriptionUserId " +
 				", group_concat(t.CurrentVersion + 0 SEPARATOR '&~&') as TranscriptionCurrentVersion " +
 				", group_concat(t.Timestamp SEPARATOR '&~&') as TranscriptionTimestamp, " +
@@ -904,6 +908,7 @@ public class ItemResponse {
 					"    place.PlaceUserGenerated AS PlaceUserGenerated,\r\n" + 
 					"    transc.TranscriptionId AS TranscriptionId,\r\n" + 
 					"    transc.TranscriptionText AS TranscriptionText,\r\n" + 
+					"    transc.TranscriptionTextNoTags AS TranscriptionTextNoTags,\r\n" + 
 					"    transc.TranscriptionUserId AS TranscriptionUserId,\r\n" + 
 					"    transc.TranscriptionCurrentVersion AS TranscriptionCurrentVersion,\r\n" + 
 					"    transc.TranscriptionTimestamp AS TranscriptionTimestamp,\r\n" + 
@@ -1065,6 +1070,8 @@ public class ItemResponse {
 					"				SEPARATOR '&~&') AS TranscriptionId,\r\n" + 
 					"			GROUP_CONCAT(t.Text ORDER BY t.Timestamp DESC\r\n" + 
 					"				SEPARATOR '&~&') AS TranscriptionText,\r\n" + 
+					"			GROUP_CONCAT(t.TextNoTags ORDER BY t.Timestamp DESC\r\n" + 
+					"				SEPARATOR '&~&') AS TranscriptionTextNoTags,\r\n" + 
 					"			GROUP_CONCAT(t.UserId ORDER BY t.Timestamp DESC\r\n" + 
 					"				SEPARATOR '&~&') AS TranscriptionUserId,\r\n" + 
 					"			GROUP_CONCAT(t.CurrentVersion + 0 ORDER BY t.Timestamp DESC\r\n" + 

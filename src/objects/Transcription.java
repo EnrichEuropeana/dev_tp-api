@@ -5,6 +5,7 @@ import java.util.List;
 public class Transcription {
 	public Integer TranscriptionId;
 	public String Text;
+	public String TextNoTags;
 	public String Timestamp;
 	public Integer UserId;
 	public Integer WP_UserId;
@@ -20,6 +21,9 @@ public class Transcription {
 	}
 	public void setText(String text) {
 		Text = text;
+	}
+	public void setTextNoTags(String textNoTags) {
+		TextNoTags = textNoTags;
 	}
 	public void setTimestamp(String timestamp) {
 		Timestamp = timestamp;
