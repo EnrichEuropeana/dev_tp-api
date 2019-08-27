@@ -1164,7 +1164,7 @@ public class ItemResponse {
 					"				SEPARATOR '&~&') AS PersonDeathDate,\r\n" + 
 					"			GROUP_CONCAT(IFNULL(pe.Link, 'NULL')\r\n" + 
 					"				SEPARATOR '&~&') AS PersonLink,\r\n" + 
-					"			GROUP_CONCAT(IFNULL(pe.Description + 0, 'NULL')\r\n" + 
+					"			GROUP_CONCAT(IFNULL(pe.Description, 'NULL')\r\n" + 
 					"				SEPARATOR '&~&') AS PersonDescription\r\n" + 
 					"		FROM\r\n" + 
 					"			Person pe\r\n" + 
