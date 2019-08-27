@@ -158,15 +158,11 @@ public class PlaceResponse {
 	//Edit entry by id
 	@Path("/{id}")
 	@POST
-	public String update(@PathParam("id") int id, String body) throws SQLException {
+	public Response update(@PathParam("id") int id, String body) throws SQLException {
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
 	    JsonObject  changes = gson.fromJson(body, JsonObject.class);
 	    
-	    //Check if field is allowed to be changed
-	    if (changes.get("PlaceId") != null || changes.get("ItemId") != null) {
-	    	return "Prohibited change attempt";
-	    }
 	    
 	    //Check if NOT NULL field is attempted to be changed to NULL
 	    if ((changes.get("Latitude") == null || !changes.get("Latitude").isJsonNull())
@@ -186,9 +182,11 @@ public class PlaceResponse {
 			}
 			query += " WHERE PlaceId = " + id;
 			String resource = executeQuery(query, "Update");
-			return resource;
+			ResponseBuilder rBuild = Response.ok(resource);
+	        return rBuild.build();
 	    } else {
-	    	return "Prohibited change to null";
+			ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
+	        return rBuild.build();
 	    }
 	}
 	
