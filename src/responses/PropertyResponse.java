@@ -226,36 +226,20 @@ public class PropertyResponse {
 	//Edit entry by id
 	@Path("/{id}")
 	@POST
-	public String update(@PathParam("id") int id, String body) throws SQLException {
+	public Response update(@PathParam("id") int id, String body) throws SQLException {
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
-	    JsonObject  changes = gson.fromJson(body, JsonObject.class);
-	    
-	    //Check if field is allowed to be changed
-	    if (changes.get("PropertyId") != null) {
-	    	return "Prohibited change attempt";
-	    }
-	    
+	    Property changes = gson.fromJson(body, Property.class);
+
 	    //Check if NOT NULL field is attempted to be changed to NULL
-	    if ((changes.get("Value") == null || !changes.get("Value").isJsonNull())
-	    		&& (changes.get("PropertyTypeId") == null || !changes.get("PropertyTypeId").isJsonNull())) {
-		    String query = "UPDATE Property SET ";
-		    
-		    int keyCount = changes.entrySet().size();
-		    int i = 1;
-			for(Map.Entry<String, JsonElement> entry : changes.entrySet()) {
-			    query += entry.getKey() + " = " + entry.getValue();
-			    if (i < keyCount) {
-			    	query += ", ";
-			    }
-			    i++;
-			}
-			query += " WHERE PropertyId = " + id;
-			String resource = executeQuery(query, "Update");
-			return resource;
-	    } else {
-	    	return "Prohibited change to null";
-	    }
+	    String query = "UPDATE Property "
+	    				+ "SET Value = '" + changes.PropertyValue + "', "
+   	    				 + "Description = '" + changes.PropertyDescription + "' ";
+		query += " WHERE PropertyId = " + id;
+		String resource = executeQuery(query, "Update");
+		//ResponseBuilder rBuild = Response.ok(resource);
+		ResponseBuilder rBuild = Response.ok(query);
+        return rBuild.build();
 	}
 	
 

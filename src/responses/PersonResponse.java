@@ -196,35 +196,80 @@ public class PersonResponse {
 	//Edit entry by id
 	@Path("/{id}")
 	@POST
-	public String update(@PathParam("id") int id, String body) throws SQLException {
+	public Response update(@PathParam("id") int id, String body) throws SQLException {
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
-	    JsonObject  changes = gson.fromJson(body, JsonObject.class);
-	    
-	    //Check if field is allowed to be changed
-	    if (changes.get("PersonId") != null) {
-	    	return "Prohibited change attempt";
-	    }
-	    
-	    //Check if NOT NULL field is attempted to be changed to NULL
-	    if ((changes.get("Name") == null || !changes.get("Name").isJsonNull())){
-		    String query = "UPDATE Person SET ";
-		    
-		    int keyCount = changes.entrySet().size();
-		    int i = 1;
-			for(Map.Entry<String, JsonElement> entry : changes.entrySet()) {
-			    query += entry.getKey() + " = " + entry.getValue();
-			    if (i < keyCount) {
-			    	query += ", ";
-			    }
-			    i++;
-			}
-			query += " WHERE PersonId = " + id;
-			String resource = executeQuery(query, "Update");
-			return resource;
-	    } else {
-	    	return "Prohibited change to null";
-	    }
+	    Person changes = gson.fromJson(body, Person.class);
+
+	    String query = "UPDATE Person ";
+	    		query += "SET FirstName = ";
+	    		if(!changes.FirstName.equals("")) {
+	    			query += "'" + changes.FirstName + "',";
+	    		}
+	    		else {
+	    			query += "null,";
+	    		}
+	    		
+	    		query += "LastName = ";
+	    		if(!changes.LastName.equals("")) {
+	    			query += "'" + changes.LastName + "',";
+	    		}
+	    		else {
+	    			query += "null,";
+	    		}
+
+	    		query += "BirthPlace = ";
+	    		if(!changes.BirthPlace.equals("")) {
+	    			query += "'" + changes.BirthPlace + "',";
+	    		}
+	    		else {
+	    			query += "null,";
+	    		}
+	    		query += "BirthDate = ";
+	    		if(!changes.BirthDate.equals("")) {
+	    			query += "'" + changes.BirthDate + "',";
+	    		}
+	    		else {
+	    			query += "null,";
+	    		}
+
+	    		query += "DeathPlace = ";
+	    		if(!changes.DeathPlace.equals("")) {
+	    			query += "'" + changes.DeathPlace + "',";
+	    		}
+	    		else {
+	    			query += "null,";
+	    		}
+
+	    		query += "DeathDate = ";
+	    		if(!changes.DeathDate.equals("")) {
+	    			query += "'" + changes.DeathDate + "',";
+	    		}
+	    		else {
+	    			query += "null,";
+	    		}
+
+	    		query += "Link = ";
+	    		if(!changes.Link.equals("")) {
+	    			query += "'" + changes.Link + "',";
+	    		}
+	    		else {
+	    			query += "null,";
+	    		}
+
+	    		query += "Description = ";
+	    		if(!changes.Description.equals("")) {
+	    			query += "'" + changes.Description + "'";
+	    		}
+	    		else {
+	    			query += "null ";
+	    		}
+		query += " WHERE PersonId = " + id;
+		
+		String resource = executeQuery(query, "Update");
+		//ResponseBuilder rBuild = Response.ok(resource);
+		ResponseBuilder rBuild = Response.ok(query);
+        return rBuild.build();
 	}
 	
 

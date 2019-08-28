@@ -173,8 +173,8 @@ public class PlaceResponse {
 	    				 + "Comment = '" + changes.Comment + "' ";
 		query += " WHERE PlaceId = " + id;
 		String resource = executeQuery(query, "Update");
-		//ResponseBuilder rBuild = Response.ok(resource);
-		ResponseBuilder rBuild = Response.ok(query);
+		ResponseBuilder rBuild = Response.ok(resource);
+		//ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
 	
