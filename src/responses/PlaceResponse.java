@@ -147,6 +147,7 @@ public class PlaceResponse {
 							+ ", " + place.UserGenerated + ")";
 			String resource = executeQuery(query, "Insert");
 			ResponseBuilder rBuild = Response.ok(resource);
+			//ResponseBuilder rBuild = Response.ok(query);
 	        return rBuild.build();
 	    } else {
 			ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
@@ -161,33 +162,20 @@ public class PlaceResponse {
 	public Response update(@PathParam("id") int id, String body) throws SQLException {
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
-	    JsonObject  changes = gson.fromJson(body, JsonObject.class);
+	    Place  changes = gson.fromJson(body, Place.class);
 	    
 	    
 	    //Check if NOT NULL field is attempted to be changed to NULL
-	    if ((changes.get("Latitude") == null || !changes.get("Latitude").isJsonNull())
-	    		&& (changes.get("Longitude") == null || !changes.get("Longitude").isJsonNull())
-	    		&& (changes.get("ItemId") == null || !changes.get("ItemId").isJsonNull())
-	    		&& (changes.get("UserGenerated") == null || !changes.get("UserGenerated").isJsonNull())){
-		    String query = "UPDATE Place SET ";
-		    
-		    int keyCount = changes.entrySet().size();
-		    int i = 1;
-			for(Map.Entry<String, JsonElement> entry : changes.entrySet()) {
-			    query += entry.getKey() + " = " + entry.getValue();
-			    if (i < keyCount) {
-			    	query += ", ";
-			    }
-			    i++;
-			}
-			query += " WHERE PlaceId = " + id;
-			String resource = executeQuery(query, "Update");
-			ResponseBuilder rBuild = Response.ok(resource);
-	        return rBuild.build();
-	    } else {
-			ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
-	        return rBuild.build();
-	    }
+	    String query = "UPDATE Place "
+	    				+ "SET Name = '" + changes.Name + "', "
+   	    				 + "Latitude = " + changes.Latitude + ", "
+ 	    				 + "Longitude = " + changes.Longitude + ", "
+	    				 + "Comment = '" + changes.Comment + "' ";
+		query += " WHERE PlaceId = " + id;
+		String resource = executeQuery(query, "Update");
+		//ResponseBuilder rBuild = Response.ok(resource);
+		ResponseBuilder rBuild = Response.ok(query);
+        return rBuild.build();
 	}
 	
 
