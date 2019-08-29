@@ -12,7 +12,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
+import objects.Place;
+import objects.Property;
 import objects.Team;
+import objects.User;
 
 import java.util.*;
 import java.io.FileInputStream;
@@ -61,8 +64,26 @@ public class TeamResponse {
 		   
 		   // Extract data from result set
 		   while(rs.next()){
+			  // Add Users
+			  List<User> UserList = new ArrayList<User>();
+			  if (rs.getString("UserId") != null) {
+				  String[] UserIds = rs.getString("UserId").split(",");
+				  String[] WP_UserIds = rs.getString("WP_UserId").split(",");
+				  String[] Roles = rs.getString("Role").split(",");
+				  String[] WP_Roles = rs.getString("WP_Role").split(",");
+				  for (int i = 0; i < UserIds.length; i++) {
+					  User user = new User();
+					  user.setUserId(Integer.parseInt(UserIds[i]));
+					  user.setWP_UserId(Integer.parseInt(WP_UserIds[i]));
+					  user.setRole(Roles[i]);
+					  user.setWP_Role(WP_Roles[i]);
+					  UserList.add(user);
+				  }
+			  }
+				  
 		      //Retrieve by column name
 			  Team team = new Team();
+			  team.setUsers(UserList);
 			  team.setTeamId(rs.getInt("teamId"));
 			  team.setName(rs.getString("Name"));
 			  team.setShortName(rs.getString("ShortName"));
@@ -96,7 +117,38 @@ public class TeamResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
-		String query = "SELECT * FROM Team WHERE 1";
+		String query = "SELECT * FROM " + 
+				"( " +
+				"SELECT \r\n" + 
+				"    t.TeamId AS TeamId,\r\n" + 
+				"    t.Name AS Name,\r\n" + 
+				"    t.ShortName AS ShortName,\r\n" + 
+				"    t.Description AS Description,\r\n" + 
+				"    t.Code AS Code,\r\n" + 
+				"    UserId AS UserId,\r\n" + 
+				"    WP_UserId AS WP_UserId,\r\n" + 
+				"    Role AS Role,\r\n" + 
+				"    WP_Role AS WP_Role\r\n" + 
+				"FROM\r\n" + 
+				"    Team t\r\n" + 
+				"        JOIN\r\n" + 
+				"	(\r\n" + 
+				"		SELECT \r\n" + 
+				"			tu.TeamId,\r\n" + 
+				"			group_concat(u.UserId) as UserId, \r\n" + 
+				"			group_concat(u.WP_UserId) as WP_UserId, \r\n" + 
+				"			group_concat(r.Name) as Role, \r\n" + 
+				"			group_concat(u.WP_Role) as WP_Role\r\n" + 
+				"		FROM TeamUser tu \r\n" + 
+				"			JOIN\r\n" + 
+				"		User u ON tu.UserId = u.UserId\r\n" + 
+				"			JOIN\r\n" + 
+				"		Role r ON u.RoleId = r.RoleId\r\n" + 
+				"        GROUP BY tu.TeamId\r\n" + 
+				"	) u ON t.TeamId = u.TeamId\r\n " +
+				") a " + 
+				"WHERE\r\n" + 
+				"    1";
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		
 		for(String key : queryParams.keySet()){
@@ -105,7 +157,7 @@ public class TeamResponse {
 		    int valueCount = values.length;
 		    int i = 1;
 		    for(String value : values) {
-		    	query += key + " = '" + value + "'";
+		    	query += key + " = " + value
 			    if (i < valueCount) {
 			    	query += " OR ";
 			    }
@@ -115,6 +167,7 @@ public class TeamResponse {
 		}
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
+		//ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
 	
@@ -122,7 +175,7 @@ public class TeamResponse {
 	//Add new entry
 	@Path("")
 	@POST
-	public String add(String body) throws SQLException {	
+	public Response add(String body) throws SQLException {	
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
 	    Team team = gson.fromJson(body, Team.class);
@@ -135,9 +188,11 @@ public class TeamResponse {
 							+ ", '" + team.Code + "'"
 							+ ", '" + team.Description + "')";
 			String resource = executeQuery(query, "Insert");
-			return query + resource;
+			ResponseBuilder rBuild = Response.ok(resource);
+	        return rBuild.build();
 	    } else {
-	    	return "Fields missing";
+			ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
+	        return rBuild.build();
 	    }
 	}
 	
@@ -145,36 +200,23 @@ public class TeamResponse {
 	//Edit entry by id
 	@Path("/{id}")
 	@POST
-	public String update(@PathParam("id") int id, String body) throws SQLException {
+	public Response update(@PathParam("id") int id, String body) throws SQLException {
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
-	    JsonObject  changes = gson.fromJson(body, JsonObject.class);
+	    Team changes = gson.fromJson(body, Team.class);
 	    
-	    //Check if field is allowed to be changed
-	    if (changes.get("TeamId") != null || changes.get("Timestamp") != null) {
-	    	return "Prohibited change attempt";
-	    }
 	    
 	    //Check if NOT NULL field is attempted to be changed to NULL
-	    if ((changes.get("Name") == null || !changes.get("Name").isJsonNull())
-	    		&& (changes.get("ShortName") == null || !changes.get("ShortName").isJsonNull())){
-		    String query = "UPDATE Team SET ";
-		    
-		    int keyCount = changes.entrySet().size();
-		    int i = 1;
-			for(Map.Entry<String, JsonElement> entry : changes.entrySet()) {
-			    query += entry.getKey() + " = " + entry.getValue();
-			    if (i < keyCount) {
-			    	query += ", ";
-			    }
-			    i++;
-			}
-			query += " WHERE TeamId = " + id;
-			String resource = executeQuery(query, "Update");
-			return resource;
-	    } else {
-	    	return "Prohibited changes to null";
-	    }
+	    String query = "UPDATE Team "
+	    				+ "SET Name = '" + changes.Name + "', "
+   	    				 + "ShortName = '" + changes.ShortName + "', "
+ 	    				 + "Description = '" + changes.Description + "', "
+	    				 + "Code = '" + changes.Code + "' ";
+		query += " WHERE TeamId = " + id;
+		String resource = executeQuery(query, "Update");
+		ResponseBuilder rBuild = Response.ok(resource);
+		//ResponseBuilder rBuild = Response.ok(query);
+        return rBuild.build();
 	}
 	
 

@@ -1,5 +1,6 @@
 package objects;
 
+import java.util.List;
 
 public class Team {
 	public Integer TeamId;
@@ -7,6 +8,7 @@ public class Team {
 	public String ShortName; 
 	public String Code; 
 	public String Description;
+	public List<User> Users;
 	
 	public void setTeamId (Integer TeamId) {
 		this.TeamId = TeamId;
@@ -26,5 +28,8 @@ public class Team {
 	
 	public void setDescription (String Description) {
 		this.Description = Description;
+	}
+	public void setUsers(List<User> users) {
+		Users = users;
 	}
 }
