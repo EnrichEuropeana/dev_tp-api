@@ -131,7 +131,7 @@ public class TeamResponse {
 				"    WP_Role AS WP_Role\r\n" + 
 				"FROM\r\n" + 
 				"    Team t\r\n" + 
-				"        JOIN\r\n" + 
+				"        LEFT JOIN\r\n" + 
 				"	(\r\n" + 
 				"		SELECT \r\n" + 
 				"			tu.TeamId,\r\n" + 
@@ -175,7 +175,7 @@ public class TeamResponse {
 	//Add new entry
 	@Path("")
 	@POST
-	public Response add(String body) throws SQLException {	
+	public Response add(String body, @Context UriInfo uriInfo) throws SQLException {	
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
 	    Team team = gson.fromJson(body, Team.class);
@@ -188,6 +188,14 @@ public class TeamResponse {
 							+ ", '" + team.Code + "'"
 							+ ", '" + team.Description + "')";
 			String resource = executeQuery(query, "Insert");
+			/*
+			MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+			if (queryParams.containsKey("UserId")) {
+				String userQuery = "INSERT INTO TeamUser (TeamId, UserId) "
+								+ "VALUES (" + team.TeamId
+										+ ", (SELECT UserId FROM User WHERE WP_UserId = " + teamUser.UserId + "))";
+				String userQueryResource = executeQuery(query, "Insert");
+			}*/
 			ResponseBuilder rBuild = Response.ok(resource);
 	        return rBuild.build();
 	    } else {
