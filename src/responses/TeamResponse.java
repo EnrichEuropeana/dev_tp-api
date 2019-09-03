@@ -188,14 +188,19 @@ public class TeamResponse {
 							+ ", '" + team.Code + "'"
 							+ ", '" + team.Description + "')";
 			String resource = executeQuery(query, "Insert");
-			/*
+			
 			MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 			if (queryParams.containsKey("UserId")) {
 				String userQuery = "INSERT INTO TeamUser (TeamId, UserId) "
-								+ "VALUES (" + team.TeamId
-										+ ", (SELECT UserId FROM User WHERE WP_UserId = " + teamUser.UserId + "))";
-				String userQueryResource = executeQuery(query, "Insert");
-			}*/
+								+ "VALUES ("
+									+ "(SELECT TeamId FROM Team WHERE Name = '" + team.Name + "')"
+									+ ", (SELECT UserId FROM User WHERE WP_UserId = " + queryParams.getFirst("UserId") + "))";
+				String userQueryResource = executeQuery(userQuery, "Insert");
+				//ResponseBuilder rBuild = Response.ok(userQueryResource);
+				ResponseBuilder rBuild = Response.ok(userQuery);
+		        return rBuild.build();
+			}
+
 			ResponseBuilder rBuild = Response.ok(resource);
 	        return rBuild.build();
 	    } else {

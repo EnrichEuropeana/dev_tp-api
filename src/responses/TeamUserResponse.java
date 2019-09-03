@@ -120,12 +120,13 @@ public class TeamUserResponse {
 	
 
 	//Delete entry by id
-	@Path("/{id}")
+	@Path("/{teamId}/{userId}")
 	@DELETE
-	public String delete(@PathParam("id") int id) throws SQLException {
-		String resource = executeQuery("DELETE FROM TeamUser WHERE TeamUserId = " + id, "Delete");
+	public String delete(@PathParam("teamId") int teamId, @PathParam("userId") int userId) throws SQLException {
+		String resource = executeQuery("DELETE FROM TeamUser WHERE UserId = " + userId + " AND TeamId = " + teamId, "Delete");
 		return resource;
 	}
+	
 	
 
 	//Get entry by id

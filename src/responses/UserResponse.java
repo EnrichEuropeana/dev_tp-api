@@ -23,7 +23,7 @@ import java.sql.*;
 
 import com.google.gson.*;
 
-@Path("/User")
+@Path("/users")
 public class UserResponse {
 
 
@@ -92,12 +92,28 @@ public class UserResponse {
 	    return result;
 	}
 
-	//Get all Entries
-	@Path("/all")
+	//Search using custom filters
+	@Path("/search")
 	@Produces("application/json;charset=utf-8")
 	@GET
-	public Response getAll() throws SQLException {
-		String query = "SELECT * FROM User WHERE 1";
+	public Response search(@Context UriInfo uriInfo) throws SQLException {
+		String query = "SELECT * FROM Campaign WHERE 1";
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		
+		for(String key : queryParams.keySet()){
+			String[] values = queryParams.getFirst(key).split(",");
+			query += " AND (";
+		    int valueCount = values.length;
+		    int i = 1;
+		    for(String value : values) {
+		    	query += key + " = '" + value + "'";
+			    if (i < valueCount) {
+			    	query += " OR ";
+			    }
+			    i++;
+		    }
+		    query += ")";
+		}
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();
@@ -105,26 +121,21 @@ public class UserResponse {
 	
 
 	//Add new entry
-	@Path("/add")
+	@Path("")
 	@POST
-	public String add(String body) throws SQLException {	
+	public Response add(String body) throws SQLException {	
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
 	    User user = gson.fromJson(body, User.class);
 	    
-	    //Check if all mandatory fields are included
-	    if (user.WP_UserId != null && user.Role != null 
-	    		&& user.WP_Role != null && user.Token != null) {
-			String query = "INSERT INTO User (WP_UserId, RoleId, WP_Role, Token) "
-							+ "VALUES (" + user.WP_UserId
-							+ ", (SELECT RoleID FROM Role WHERE Name = '" + user.Role + "')"
-							+ ", '" + user.WP_Role + "'"
-							+ ", '" + user.Token +"')";
-			String resource = executeQuery(query, "Insert");
-			return resource;
-	    } else {
-	    	return "Fields missing";
-	    }
+		String query = "INSERT INTO User (WP_UserId, RoleId, WP_Role, Token) "
+						+ "VALUES (" + user.WP_UserId
+						+ ", (SELECT RoleID FROM Role WHERE Name = '" + user.Role + "')"
+						+ ", '" + user.WP_Role + "'"
+						+ ", '" + user.Token +"')";
+		String resource = executeQuery(query, "Insert");
+		ResponseBuilder rBuild = Response.ok(resource);
+        return rBuild.build();
 	}
 	
 
@@ -187,32 +198,6 @@ public class UserResponse {
         return rBuild.build();
 	}
 
-	//Search using custom filters
-	@Path("/search")
-	@Produces("application/json;charset=utf-8")
-	@GET
-	public Response search(@Context UriInfo uriInfo) throws SQLException {
-		String query = "SELECT * FROM Campaign WHERE 1";
-		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-		
-		for(String key : queryParams.keySet()){
-			String[] values = queryParams.getFirst(key).split(",");
-			query += " AND (";
-		    int valueCount = values.length;
-		    int i = 1;
-		    for(String value : values) {
-		    	query += key + " = '" + value + "'";
-			    if (i < valueCount) {
-			    	query += " OR ";
-			    }
-			    i++;
-		    }
-		    query += ")";
-		}
-		String resource = executeQuery(query, "Select");
-		ResponseBuilder rBuild = Response.ok(resource);
-        return rBuild.build();
-	}
 }
 
 
