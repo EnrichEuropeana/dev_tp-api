@@ -13,6 +13,7 @@ import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
 import objects.Campaign;
+import objects.Team;
 
 import java.util.*;
 import java.io.FileInputStream;
@@ -23,7 +24,7 @@ import java.sql.*;
 
 import com.google.gson.*;
 
-@Path("/Campaign")
+@Path("/campaigns")
 public class CampaignResponse {
 
 
@@ -91,93 +92,8 @@ public class CampaignResponse {
 	    return result;
 	}
 
-	//Get all Entries
-	@Path("/all")
-	@Produces("application/json;charset=utf-8")
-	@GET
-	public Response getAll() throws SQLException {
-		String query = "SELECT * FROM Campaign WHERE 1";
-		String resource = executeQuery(query, "Select");
-		ResponseBuilder rBuild = Response.ok(resource);
-        return rBuild.build();
-	}
-	
-
-	//Add new entry
-	@Path("/add")
-	@POST
-	public String add(String body) throws SQLException {	
-	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
-	    Gson gson = gsonBuilder.create();
-	    Campaign campaign = gson.fromJson(body, Campaign.class);
-	    
-	    //Check if all mandatory fields are included
-	    if (campaign.Name != null && campaign.Public != null) {
-			String query = "INSERT INTO Campaign (Name, Start, End, Public) "
-							+ "VALUES ('" + campaign.Name + "'"
-								+ ", '" + campaign.Start + "'"
-								+ ", '" + campaign.End + "'"
-								+ ", " + campaign.Public + ")";
-			String resource = executeQuery(query, "Insert");
-			return resource;
-	    } else {
-	    	return "Fields missing";
-	    }
-	}
-	
-
-	//Edit entry by id
-	@Path("/{id}")
-	@POST
-	public String update(@PathParam("id") int id, String body) throws SQLException {
-	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
-	    Gson gson = gsonBuilder.create();
-	    JsonObject  changes = gson.fromJson(body, JsonObject.class);
-	    
-	    //Check if NOT NULL field is attempted to be changed to NULL
-	    if ((changes.get("Name") == null || !changes.get("Name").isJsonNull())
-	    		&& (changes.get("Public") == null || !changes.get("Public").isJsonNull())) {
-		    String query = "UPDATE Campaign SET ";
-		    
-		    int keyCount = changes.entrySet().size();
-		    int i = 1;
-			for(Map.Entry<String, JsonElement> entry : changes.entrySet()) {
-			    query += entry.getKey() + " = " + entry.getValue();
-			    if (i < keyCount) {
-			    	query += ", ";
-			    }
-			    i++;
-			}
-			query += " WHERE CampaignId = " + id;
-			String resource = executeQuery(query, "Update");
-			return resource;
-	    } else {
-	    	return "Prohibited change to null";
-	    }
-	}
-	
-
-	//Delete entry by id
-	@Path("/{id}")
-	@DELETE
-	public String delete(@PathParam("id") int id) throws SQLException {
-		String resource = executeQuery("DELETE FROM Campaign WHERE CampaignId = " + id, "Delete");
-		return resource;
-	}
-	
-
-	//Get entry by id
-	@Path("/{id}")
-	@Produces("application/json;charset=utf-8")
-	@GET
-	public Response getEntry(@PathParam("id") int id) throws SQLException {
-		String resource = executeQuery("SELECT * FROM Campaign WHERE CampaignId = " + id, "Select");
-		ResponseBuilder rBuild = Response.ok(resource);
-        return rBuild.build();
-	}
-
 	//Search using custom filters
-	@Path("/search")
+	@Path("")
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
@@ -202,4 +118,66 @@ public class CampaignResponse {
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();
 	}
+
+	//Add new entry
+	@Path("")
+	@POST
+	public Response add(String body) throws SQLException {	
+	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
+	    Gson gson = gsonBuilder.create();
+	    Campaign campaign = gson.fromJson(body, Campaign.class);
+	    
+		String query = "INSERT INTO Campaign (Name, Start, End, Public) "
+						+ "VALUES ('" + campaign.Name + "'"
+							+ ", '" + campaign.Start + "'"
+							+ ", '" + campaign.End + "'"
+							+ ", " + campaign.Public + ")";
+		String resource = executeQuery(query, "Insert");
+		ResponseBuilder rBuild = Response.ok(resource);
+        return rBuild.build();
+	}
+	
+
+	//Edit entry by id
+	@Path("/{id}")
+	@POST
+	public Response update(@PathParam("id") int id, String body) throws SQLException {
+	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
+	    Gson gson = gsonBuilder.create();
+	    Campaign changes = gson.fromJson(body, Campaign.class);
+	    
+	    
+	    //Check if NOT NULL field is attempted to be changed to NULL
+	    String query = "UPDATE Campaign "
+	    				+ "SET Name = '" + changes.Name + "', "
+   	    				 + "Start = '" + changes.Start + "', "
+ 	    				 + "End = '" + changes.End + "', "
+	    				 + "Public = " + changes.Public;
+		query += " WHERE CampaignId = " + id;
+		String resource = executeQuery(query, "Update");
+		//ResponseBuilder rBuild = Response.ok(resource);
+		ResponseBuilder rBuild = Response.ok(query);
+        return rBuild.build();
+	}
+	
+
+	//Delete entry by id
+	@Path("/{id}")
+	@DELETE
+	public String delete(@PathParam("id") int id) throws SQLException {
+		String resource = executeQuery("DELETE FROM Campaign WHERE CampaignId = " + id, "Delete");
+		return resource;
+	}
+	
+
+	//Get entry by id
+	@Path("/{id}")
+	@Produces("application/json;charset=utf-8")
+	@GET
+	public Response getEntry(@PathParam("id") int id) throws SQLException {
+		String resource = executeQuery("SELECT * FROM Campaign WHERE CampaignId = " + id, "Select");
+		ResponseBuilder rBuild = Response.ok(resource);
+        return rBuild.build();
+	}
+
 }
