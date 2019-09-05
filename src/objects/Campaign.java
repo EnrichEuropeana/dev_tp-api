@@ -1,6 +1,7 @@
 package objects;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 public class Campaign {
 	public Integer CampaignId;
@@ -8,6 +9,7 @@ public class Campaign {
 	public Timestamp Start; 
 	public Timestamp End; 
 	public String Public; 
+	public List<Team> Teams;
 
 	public void setCampaignId (Integer CampaignId) {
 		this.CampaignId = CampaignId;
@@ -27,5 +29,8 @@ public class Campaign {
 	
 	public void setPublic (String Public) {
 		this.Public = Public;
+	}
+	public void setTeams(List<Team> teams) {
+		Teams = teams;
 	}
 }

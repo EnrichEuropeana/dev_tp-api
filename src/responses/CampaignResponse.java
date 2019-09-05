@@ -14,6 +14,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 
 import objects.Campaign;
 import objects.Team;
+import objects.User;
 
 import java.util.*;
 import java.io.FileInputStream;
@@ -62,8 +63,23 @@ public class CampaignResponse {
 		   
 		   // Extract data from result set
 		   while(rs.next()){
+				  // Add Teams
+				  List<Team> TeamList = new ArrayList<Team>();
+				  if (rs.getString("TeamId") != null) {
+					  String[] TeamIds = rs.getString("TeamId").split(",");
+					  String[] TeamNames = rs.getString("TeamName").split(",");
+					  String[] TeamShortNames = rs.getString("TeamShortName").split(",");
+					  for (int i = 0; i < TeamIds.length; i++) {
+						  Team team = new Team();
+						  team.setTeamId(Integer.parseInt(TeamIds[i]));
+						  team.setName(TeamNames[i]);
+						  team.setShortName(TeamShortNames[i]);
+						  TeamList.add(team);
+					  }
+				  }
 		      //Retrieve by column name
 			  Campaign campaign = new Campaign();
+			  campaign.setTeams(TeamList);
 			  campaign.setCampaignId(rs.getInt("CampaignId"));
 			  campaign.setName(rs.getString("Name"));
 			  campaign.setStart(rs.getTimestamp("Start"));
@@ -97,7 +113,34 @@ public class CampaignResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
-		String query = "SELECT * FROM Campaign WHERE 1";
+		String query = "SELECT * FROM   \r\n" + 
+				"				(  \r\n" + 
+				"				SELECT  \r\n" + 
+				"					c.CampaignId AS CampaignId,\r\n" + 
+				"				    c.Name AS Name,  \r\n" + 
+				"				    c.Start AS Start,  \r\n" + 
+				"				    c.End AS End,  \r\n" + 
+				"				    c.Public AS Public,  \r\n" + 
+				"				    t.TeamId AS TeamId,  \r\n" + 
+				"				    t.Name AS TeamName,  \r\n" + 
+				"				    t.ShortName AS TeamShortName\r\n" + 
+				"				FROM  \r\n" + 
+				"				    Campaign c  \r\n" + 
+				"				        LEFT JOIN  \r\n" + 
+				"					(  \r\n" + 
+				"						SELECT   \r\n" + 
+				"							tc.CampaignId,  \r\n" + 
+				"							group_concat(t.TeamId) as TeamId,   \r\n" + 
+				"							group_concat(t.Name) as Name,   \r\n" + 
+				"							group_concat(t.ShortName) as ShortName   \r\n" + 
+				"						FROM TeamCampaign tc   \r\n" + 
+				"							JOIN  \r\n" + 
+				"						Team t ON tc.TeamId = t.TeamId  \r\n" + 
+				"				        GROUP BY tc.CampaignId  \r\n" + 
+				"					) t ON c.CampaignId = t.CampaignId  \r\n" + 
+				"				) a   \r\n" + 
+				"				WHERE  \r\n" + 
+				"				    1";
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		
 		for(String key : queryParams.keySet()){
@@ -114,6 +157,7 @@ public class CampaignResponse {
 		    }
 		    query += ")";
 		}
+		query += " ORDER BY CampaignId DESC";
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();
@@ -155,8 +199,8 @@ public class CampaignResponse {
 	    				 + "Public = " + changes.Public;
 		query += " WHERE CampaignId = " + id;
 		String resource = executeQuery(query, "Update");
-		//ResponseBuilder rBuild = Response.ok(resource);
-		ResponseBuilder rBuild = Response.ok(query);
+		ResponseBuilder rBuild = Response.ok(resource);
+		//ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
 	

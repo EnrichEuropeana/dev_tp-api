@@ -23,7 +23,7 @@ import java.sql.*;
 
 import com.google.gson.*;
 
-@Path("/TeamCampaign")
+@Path("/teamCampaigns")
 public class TeamCampaignResponse {
 	
 	
@@ -88,61 +88,8 @@ public class TeamCampaignResponse {
 	    return result;
 	}
 
-	//Get all Entries
-	@Path("/all")
-	@Produces("application/json;charset=utf-8")
-	@GET
-	public Response getAll() throws SQLException {
-		String query = "SELECT * FROM TeamCampaign WHERE 1";
-		String resource = executeQuery(query, "Select");
-		ResponseBuilder rBuild = Response.ok(resource);
-        return rBuild.build();
-	}
-	
-
-	//Add new entry
-	@Path("/add")
-	@POST
-	public String add(String body) throws SQLException {	
-	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
-	    Gson gson = gsonBuilder.create();
-	    TeamCampaign teamCampaign = gson.fromJson(body, TeamCampaign.class);
-	    
-	    //Check if all mandatory fields are included
-	    if (teamCampaign.TeamId != null && teamCampaign.CampaignId != null) {
-			String query = "INSERT INTO TeamCampaign (TeamId, CampaignId) "
-							+ "VALUES ('" + teamCampaign.TeamId + "'"
-								+ ", " + teamCampaign.CampaignId + ")";
-			String resource = executeQuery(query, "Insert");
-			return resource;
-	    } else {
-	    	return "Fields missing";
-	    }
-	}
-
-	
-
-	//Delete entry by id
-	@Path("/{id}")
-	@DELETE
-	public String delete(@PathParam("id") int id) throws SQLException {
-		String resource = executeQuery("DELETE FROM TeamCampaign WHERE TeamCampaignId = " + id, "Delete");
-		return resource;
-	}
-	
-
-	//Get entry by id
-	@Path("/{id}")
-	@Produces("application/json;charset=utf-8")
-	@GET
-	public Response getEntry(@PathParam("id") int id) throws SQLException {
-		String resource = executeQuery("SELECT * FROM TeamCampaign WHERE TeamCampaignId = " + id, "Select");
-		ResponseBuilder rBuild = Response.ok(resource);
-        return rBuild.build();
-	}
-
 	//Search using custom filters
-	@Path("/search")
+	@Path("")
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
@@ -167,6 +114,45 @@ public class TeamCampaignResponse {
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();
 	}
+	
+
+	//Add new entry
+	@Path("")
+	@POST
+	public Response add(String body) throws SQLException {	
+	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
+	    Gson gson = gsonBuilder.create();
+	    TeamCampaign teamCampaign = gson.fromJson(body, TeamCampaign.class);
+	    
+		String query = "INSERT INTO TeamCampaign (TeamId, CampaignId) "
+						+ "VALUES ('" + teamCampaign.TeamId + "'"
+							+ ", " + teamCampaign.CampaignId + ")";
+		String resource = executeQuery(query, "Insert");
+		ResponseBuilder rBuild = Response.ok(resource);
+        return rBuild.build();
+	}
+
+	
+
+	//Delete entry by id
+	@Path("/{teamId}/{campaignId}")
+	@DELETE
+	public String delete(@PathParam("teamId") int teamId, @PathParam("campaignId") int campaignId) throws SQLException {
+		String resource = executeQuery("DELETE FROM TeamUser WHERE CampaignId = " + campaignId + " AND TeamId = " + teamId, "Delete");
+		return resource;
+	}
+	
+
+	//Get entry by id
+	@Path("/{id}")
+	@Produces("application/json;charset=utf-8")
+	@GET
+	public Response getEntry(@PathParam("id") int id) throws SQLException {
+		String resource = executeQuery("SELECT * FROM TeamCampaign WHERE TeamCampaignId = " + id, "Select");
+		ResponseBuilder rBuild = Response.ok(resource);
+        return rBuild.build();
+	}
+
 }
 
 
