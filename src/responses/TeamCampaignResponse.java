@@ -135,10 +135,10 @@ public class TeamCampaignResponse {
 	
 
 	//Delete entry by id
-	@Path("/{teamId}/{campaignId}")
+	@Path("/{campaignId}/{teamId}")
 	@DELETE
 	public String delete(@PathParam("teamId") int teamId, @PathParam("campaignId") int campaignId) throws SQLException {
-		String resource = executeQuery("DELETE FROM TeamUser WHERE CampaignId = " + campaignId + " AND TeamId = " + teamId, "Delete");
+		String resource = executeQuery("DELETE FROM TeamCampaign WHERE CampaignId = " + campaignId + " AND TeamId = " + teamId, "Delete");
 		return resource;
 	}
 	

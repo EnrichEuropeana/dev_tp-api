@@ -33,6 +33,8 @@ public class Item {
 	public String ImageLink;
 	public Integer OrderIndex;
 	public String Timestamp;
+	public String LockedTime;
+	public Integer LockedUser;
 	public String Manifest;
 	public Integer StoryId;
 	public String StorydcTitle;
@@ -300,6 +302,12 @@ public class Item {
 	}
 	public void setTimestamp(String timestamp) {
 		Timestamp = timestamp;
+	}
+	public void setLockedTime(String lockedTime) {
+		LockedTime = lockedTime;
+	}
+	public void setLockedUser(Integer lockedUser) {
+		LockedUser = lockedUser;
 	}
 	public void setManifest(String manifest) {
 		Manifest = manifest;

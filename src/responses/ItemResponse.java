@@ -377,6 +377,8 @@ public class ItemResponse {
 			  item.setImageLink(rs.getString("ImageLink"));
 			  item.setOrderIndex(rs.getInt("OrderIndex"));
 			  item.setTimestamp(rs.getString("Timestamp"));
+			  item.setLockedTime(rs.getString("LockedTime"));
+			  item.setLockedUser(rs.getInt("LockedUser"));
 			  item.setManifest(rs.getString("Manifest"));
 			  item.setStoryId(rs.getInt("StoryId"));
 			  item.setStorydcTitle(rs.getString("StorydcTitle"));
@@ -480,6 +482,8 @@ public class ItemResponse {
 				"    i.ImageLink as ImageLink, \r\n" + 
 				"    i.OrderIndex as OrderIndex, \r\n" + 
 				"    i.Timestamp as Timestamp,\r\n" + 
+				"    i.LockedTime as LockedTime,\r\n" + 
+				"    i.LockedUser as LockedUser,\r\n" + 
 				"    i.Manifest as Manifest,\r\n" + 
 				"    a.PropertyId as PropertyId,\r\n" + 
 				"    a.PropertyTypeName as PropertyTypeName,\r\n" + 
@@ -887,6 +891,8 @@ public class ItemResponse {
 					"    i.ImageLink AS ImageLink,\r\n" + 
 					"    i.OrderIndex AS OrderIndex,\r\n" + 
 					"    i.Timestamp AS Timestamp,\r\n" + 
+					"    i.LockedTime AS LockedTime,\r\n" + 
+					"    i.LockedUser AS LockedUser,\r\n" + 
 					"    i.Manifest AS Manifest,\r\n" + 
 					"    prop.PropertyId AS PropertyId,\r\n" + 
 					"    prop.PropertyTypeName AS PropertyTypeName,\r\n" + 
