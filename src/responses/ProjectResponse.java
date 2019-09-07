@@ -190,9 +190,13 @@ public class ProjectResponse {
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
 			   if (success > 0) {
+				   stmt.close();
+				   conn.close();
 				   return type +" succesful";
 			   }
 			   else {
+				   stmt.close();
+				   conn.close();
 				   return type +" could not be executed";
 			   }
 		   }
@@ -375,15 +379,18 @@ public class ProjectResponse {
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
 			   if (success > 0) {
+				   stmt.close();
 				   conn.close();
 				   return type +" succesful";
 			   }
 			   else {
+				   stmt.close();
 				   conn.close();
 				   return "Failed";
 			   }
 		   }
 		   else {
+			   stmt.close();
 			   conn.close();
 			   return "test2";
 		   }
@@ -398,8 +405,7 @@ public class ProjectResponse {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-	   //return "query couldn't be executed";
-		return query;
+	   return "query couldn't be executed";
 	}
 	
 	//Get entry by id

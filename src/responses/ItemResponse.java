@@ -76,10 +76,13 @@ public class ItemResponse {
 			   
 			   int success = stmt.executeUpdate(query);
 			   if (success > 0) {
-			        
+				   stmt.close();
+				   conn.close();
 				   return type +" succesful";
 			   }
 			   else {
+				   stmt.close();
+				   conn.close();
 				   return type +" could not be executed";
 			   }
 		   }
