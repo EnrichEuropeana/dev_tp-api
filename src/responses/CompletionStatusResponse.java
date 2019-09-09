@@ -51,13 +51,13 @@ public class CompletionStatusResponse {
 	            final String PASS = prop.getProperty("PASS");
 	            
 			   // Register JDBC driver
-			   try {
 				Class.forName("com.mysql.jdbc.Driver");
-			
-			   // Open a connection
-			   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
-			   // Execute SQL query
-			   Statement stmt = conn.createStatement();
+				
+				   // Open a connection
+				   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+				   // Execute SQL query
+				   Statement stmt = conn.createStatement();
+			   try {
 			   if (type != "Select") {
 				   int success = stmt.executeUpdate(query);
 				   if (success > 0) {
@@ -91,13 +91,16 @@ public class CompletionStatusResponse {
 			   } catch(SQLException se) {
 			       //Handle errors for JDBC
 				   se.printStackTrace();
-			   } catch (ClassNotFoundException e) {
-				   e.printStackTrace();
-
-	        }
+			   } finally {
+				    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+				    try { conn.close(); } catch (Exception e) { /* ignored */ }
+			   }
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 		} catch (IOException e1) {
+			e1.printStackTrace();
+		} catch (ClassNotFoundException e1) {
+			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 	    Gson gsonBuilder = new GsonBuilder().create();

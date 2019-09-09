@@ -64,384 +64,389 @@ public class ItemResponse {
 	            final String DB_URL = prop.getProperty("DB_URL");
 	            final String USER = prop.getProperty("USER");
 	            final String PASS = prop.getProperty("PASS");
-		   // Register JDBC driver
-		   try {
-			Class.forName("com.mysql.jdbc.Driver");
-		
-		   // Open a connection
-		   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
-		   // Execute SQL query
-		   Statement stmt = conn.createStatement();
-		   if (type != "Select") {
+	            
+			   // Register JDBC driver
+	           Class.forName("com.mysql.jdbc.Driver");
+			
+			   // Open a connection
+			   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+			   // Execute SQL query
+			   Statement stmt = conn.createStatement();
+			   try {
+			   if (type != "Select") {
+				   
+				   int success = stmt.executeUpdate(query);
+				   if (success > 0) {
+					   stmt.close();
+					   conn.close();
+					   return type +" succesful";
+				   }
+				   else {
+					   stmt.close();
+					   conn.close();
+					   return type +" could not be executed";
+				   }
+			   }
+			   stmt.execute("SET group_concat_max_len = 1000000;");
+			   ResultSet rs = stmt.executeQuery(query);
 			   
-			   int success = stmt.executeUpdate(query);
-			   if (success > 0) {
-				   stmt.close();
-				   conn.close();
-				   return type +" succesful";
-			   }
-			   else {
-				   stmt.close();
-				   conn.close();
-				   return type +" could not be executed";
-			   }
-		   }
-		   stmt.execute("SET group_concat_max_len = 1000000;");
-		   ResultSet rs = stmt.executeQuery(query);
-		   
-		   // Extract data from result set
-		   while(rs.next()){
-		      //Retrieve by column name
-			  Item item = new Item();
-			  item.setItemId(rs.getInt("ItemId"));
-			  
-			  // Add Properties
-			  List<Property> PropertyList = new ArrayList<Property>();
-			  if (rs.getString("PropertyId") != null) {
-				  String[] PropertyIds = rs.getString("PropertyId").split("&~&");
-				  String[] PropertyValues = rs.getString("PropertyValue").split("&~&");
-				  String[] PropertyDescriptions = new String[PropertyIds.length];
-				  if (rs.getString("PropertyDescription") != null) {
-					  PropertyDescriptions = rs.getString("PropertyDescription").split("&~&");
-				  }
-				  String[] PropertyTypeNames = rs.getString("PropertyTypeName").split("&~&");
-				  String[] PropertyEditables = rs.getString("PropertyEditable").split("&~&");
-				  for (int i = 0; i < PropertyIds.length; i++) {
-					  Property property = new Property();
-					  property.setPropertyId(Integer.parseInt(PropertyIds[i]));
-					  property.setPropertyValue(PropertyValues[i]);
-					  if (PropertyDescriptions[i] != null) {
-						  property.setPropertyDescription(PropertyDescriptions[i]);
-					  }
-					  property.setPropertyType(PropertyTypeNames[i]);
-					  property.setEditable(PropertyEditables[i]);
-					  PropertyList.add(property);
-				  }
-			  }
-			  
-			  //Add Places
-			  List<Place> PlaceList = new ArrayList<Place>();
-			  if (rs.getString("PlaceId") != null) {
-				  String[] PlaceIds = rs.getString("PlaceId").split("&~&");
-				  String[] PlaceNames = rs.getString("PlaceName").split("&~&");
-				  String[] PlaceLatitudes = rs.getString("PlaceLatitude").split("&~&");
-				  String[] PlaceLongitudes = rs.getString("PlaceLongitude").split("&~&");
-				  String[] PlaceLink = rs.getString("PlaceLink").split("&~&", -1);
-				  String[] PlaceZoom = rs.getString("PlaceZoom").split("&~&");
-				  String[] PlaceComment = rs.getString("PlaceComment").split("&~&", -1);
-				  String[] PlaceUserId = rs.getString("PlaceUserId").split("&~&");
-				  String[] PlaceUserGenerated = rs.getString("PlaceUserGenerated").split("&~&");
-				  for (int i = 0; i < PlaceIds.length; i++) {
-					  Place place = new Place();
-					  place.setPlaceId(Integer.parseInt(PlaceIds[i]));
-					  place.setName(PlaceNames[i]);
-					  place.setLatitude(Float.parseFloat(PlaceLatitudes[i]));
-					  place.setLongitude(Float.parseFloat(PlaceLongitudes[i]));
-					  place.setLink(PlaceLink[i]);
-					  place.setZoom(Integer.parseInt(PlaceZoom[i]));
-					  place.setComment(PlaceComment[i]);
-					  place.setUserId(Integer.parseInt(PlaceUserId[i]));
-					  place.setUserGenerated(PlaceUserGenerated[i]);
-					  PlaceList.add(place);
-				  }
-			  }
-
-			  //Add Transcriptions
-			  List<Transcription> TranscriptionList = new ArrayList<Transcription>();
-			  if (rs.getString("TranscriptionId") != null) {				  
-				  String[] TranscriptionIds = rs.getString("TranscriptionId").split("&~&");
-				  String[] TranscriptionTexts = rs.getString("TranscriptionText").split("&~&");
-				  String[] TranscriptionTextNoTags = rs.getString("TranscriptionTextNoTags").split("&~&");
-				  String[] TranscriptionUserIds = rs.getString("TranscriptionUserId").split("&~&");
-				  String[] TranscriptionCurrentVersions = rs.getString("TranscriptionCurrentVersion").split("&~&");
-				  String[] TranscriptionTimestamps = rs.getString("TranscriptionTimestamp").split("&~&");
-				  String[] TranscriptionWP_UserIds = rs.getString("TranscriptionWP_UserId").split("&~&");
-				  String[] TranscriptionEuropeanaAnnotationIds = new String[TranscriptionIds.length];
-				  String[] TranscriptionNoTexts = rs.getString("TranscriptionNoText").split("&~&");
-				  if (rs.getString("TranscriptionEuropeanaAnnotationId") != null) {
-					  TranscriptionEuropeanaAnnotationIds = rs.getString("TranscriptionEuropeanaAnnotationId").split("&~&");
-				  }
+			   // Extract data from result set
+			   while(rs.next()){
+			      //Retrieve by column name
+				  Item item = new Item();
+				  item.setItemId(rs.getInt("ItemId"));
 				  
-				  String[] LanguageIdList = new String[TranscriptionIds.length];
-				  String[] LanguageNameList = new String[TranscriptionIds.length];
-				  String[] LanguageNameEnglishList = new String[TranscriptionIds.length];
-				  String[] LanguageShortNameList = new String[TranscriptionIds.length];
-				  String[] LanguageCodeList = new String[TranscriptionIds.length];
-				  if (rs.getString("TranscriptionLanguageId") != null) {
-					  LanguageIdList = rs.getString("TranscriptionLanguageId").split("&~&");
-				  }
-				  if (rs.getString("TranscriptionLanguageName") != null) {
-					  LanguageNameList = rs.getString("TranscriptionLanguageName").split("&~&");
-				  }
-				  if (rs.getString("TranscriptionLanguageNameEnglish") != null) {
-					  LanguageNameEnglishList = rs.getString("TranscriptionLanguageNameEnglish").split("&~&");
-				  }
-				  if (rs.getString("TranscriptionLanguageShortName") != null) {
-					  LanguageShortNameList = rs.getString("TranscriptionLanguageShortName").split("&~&");
-				  }
-				  if (rs.getString("TranscriptionLanguageCode") != null) {
-					  LanguageCodeList = rs.getString("TranscriptionLanguageCode").split("&~&");
-				  }
-				  
-				  for (int i = 0; i < TranscriptionIds.length; i++) {
-					  Transcription transcription = new Transcription();
-					  transcription.setTranscriptionId(Integer.parseInt(TranscriptionIds[i]));
-					  transcription.setText(TranscriptionTexts[i]);
-					  transcription.setTextNoTags(TranscriptionTextNoTags[i]);
-					  transcription.setUserId(Integer.parseInt(TranscriptionUserIds[i]));
-					  transcription.setCurrentVersion(TranscriptionCurrentVersions[i]);
-				      transcription.setTimestamp(TranscriptionTimestamps[i]);
-					  transcription.setWP_UserId(Integer.parseInt(TranscriptionWP_UserIds[i]));
-					  if (TranscriptionEuropeanaAnnotationIds[i] != null) {
-						  transcription.setEuropeanaAnnotationId(Integer.parseInt(TranscriptionEuropeanaAnnotationIds[i]));
+				  // Add Properties
+				  List<Property> PropertyList = new ArrayList<Property>();
+				  if (rs.getString("PropertyId") != null) {
+					  String[] PropertyIds = rs.getString("PropertyId").split("&~&");
+					  String[] PropertyValues = rs.getString("PropertyValue").split("&~&");
+					  String[] PropertyDescriptions = new String[PropertyIds.length];
+					  if (rs.getString("PropertyDescription") != null) {
+						  PropertyDescriptions = rs.getString("PropertyDescription").split("&~&");
 					  }
-					  transcription.setNoText(TranscriptionNoTexts[i]);
-
-					  List<Language> LanguageList = new ArrayList<Language>();
-					  if (rs.getString("TranscriptionLanguageId") != null) {
-						  // Intitialize lists grouped by items
-						  String[] LanguageIds = LanguageIdList[i].split("�~�");
-						  String[] LanguageNames = LanguageNameList[i].split("�~�");
-						  String[] LanguageNameEnglishs = LanguageNameEnglishList[i].split("�~�");
-						  String[] LanguageShortNames = LanguageShortNameList[i].split("�~�");
-						  String[] LanguageCodes = LanguageCodeList[i].split("�~�");
-						  for (int j = 0; j < LanguageIds.length; j++) {
-							  if (!isNumeric(LanguageIds[j])) {
-								  continue;
-							  }
-							  Language language = new Language();
-							  language.setLanguageId(Integer.parseInt(LanguageIds[j]));
-							  language.setName(LanguageNames[j]);
-							  language.setNameEnglish(LanguageNameEnglishs[j]);
-							  language.setShortName(LanguageShortNames[j]);
-							  language.setCode(LanguageCodes[j]);
-							  LanguageList.add(language);
+					  String[] PropertyTypeNames = rs.getString("PropertyTypeName").split("&~&");
+					  String[] PropertyEditables = rs.getString("PropertyEditable").split("&~&");
+					  for (int i = 0; i < PropertyIds.length; i++) {
+						  Property property = new Property();
+						  property.setPropertyId(Integer.parseInt(PropertyIds[i]));
+						  property.setPropertyValue(PropertyValues[i]);
+						  if (PropertyDescriptions[i] != null) {
+							  property.setPropertyDescription(PropertyDescriptions[i]);
 						  }
+						  property.setPropertyType(PropertyTypeNames[i]);
+						  property.setEditable(PropertyEditables[i]);
+						  PropertyList.add(property);
 					  }
-					  transcription.setLanguages(LanguageList);
-					  TranscriptionList.add(transcription);
 				  }
-			  }
-			  
-			  
-			  //Add Annotations
-			  List<Annotation> AnnotationList = new ArrayList<Annotation>();
-			  if (rs.getString("AnnotationId") != null) {
-				  String[] AnnotationIds = rs.getString("AnnotationId").split("&~&");
-				  String[] AnnotationTexts = rs.getString("AnnotationText").split("&~&");
-				  String[] AnnotationUserIds = rs.getString("AnnotationUserId").split("&~&");
-				  String[] AnnotationX_Coords = rs.getString("AnnotationX_Coord").split(",", -1);
-				  String[] AnnotationY_Coords = rs.getString("AnnotationY_Coord").split(",", -1);
-				  String[] AnnotationWidths = rs.getString("AnnotationWidth").split(",", -1);
-				  String[] AnnotationHeights = rs.getString("AnnotationHeight").split(",", -1);
-				  String[] AnnotationTypes = rs.getString("AnnotationType").split("&~&");
-				  for (int i = 0; i < AnnotationIds.length; i++) {
-					  Annotation annotation = new Annotation();
-					  annotation.setAnnotationId(Integer.parseInt(AnnotationIds[i]));
-					  annotation.setText(AnnotationTexts[i]);
-					  annotation.setUserId(Integer.parseInt(AnnotationUserIds[i]));
-					  annotation.setX_Coord(Float.parseFloat(AnnotationX_Coords[i]));
-					  annotation.setY_Coord(Float.parseFloat(AnnotationY_Coords[i]));
-					  annotation.setHeight(Float.parseFloat(AnnotationWidths[i]));
-					  annotation.setWidth(Float.parseFloat(AnnotationHeights[i]));
-					  annotation.setAnnotationType(AnnotationTypes[i]);
-					  AnnotationList.add(annotation);
+				  
+				  //Add Places
+				  List<Place> PlaceList = new ArrayList<Place>();
+				  if (rs.getString("PlaceId") != null) {
+					  String[] PlaceIds = rs.getString("PlaceId").split("&~&");
+					  String[] PlaceNames = rs.getString("PlaceName").split("&~&");
+					  String[] PlaceLatitudes = rs.getString("PlaceLatitude").split("&~&");
+					  String[] PlaceLongitudes = rs.getString("PlaceLongitude").split("&~&");
+					  String[] PlaceLink = rs.getString("PlaceLink").split("&~&", -1);
+					  String[] PlaceZoom = rs.getString("PlaceZoom").split("&~&");
+					  String[] PlaceComment = rs.getString("PlaceComment").split("&~&", -1);
+					  String[] PlaceUserId = rs.getString("PlaceUserId").split("&~&");
+					  String[] PlaceUserGenerated = rs.getString("PlaceUserGenerated").split("&~&");
+					  for (int i = 0; i < PlaceIds.length; i++) {
+						  Place place = new Place();
+						  place.setPlaceId(Integer.parseInt(PlaceIds[i]));
+						  place.setName(PlaceNames[i]);
+						  place.setLatitude(Float.parseFloat(PlaceLatitudes[i]));
+						  place.setLongitude(Float.parseFloat(PlaceLongitudes[i]));
+						  place.setLink(PlaceLink[i]);
+						  place.setZoom(Integer.parseInt(PlaceZoom[i]));
+						  place.setComment(PlaceComment[i]);
+						  place.setUserId(Integer.parseInt(PlaceUserId[i]));
+						  place.setUserGenerated(PlaceUserGenerated[i]);
+						  PlaceList.add(place);
+					  }
 				  }
-			  }
-			  
-
-			  //Add Comments
-			  List<Comment> CommentList = new ArrayList<Comment>();
-			  if (rs.getString("CommentId") != null) {
-				  String[] CommentIds = rs.getString("CommentId").split("&~&");
-				  String[] CommentTexts = rs.getString("CommentText").split("&~&");
-				  String[] CommentUserIds = rs.getString("CommentUserId").split("&~&");
-				  String[] CommentTimestamps = rs.getString("CommentTimestamp").split("&~&");
-				  for (int i = 0; i < CommentIds.length; i++) {
-					  Comment comment = new Comment();
-					  comment.setCommentId(Integer.parseInt(CommentIds[i]));
-					  comment.setText(CommentTexts[i]);
-					  comment.setUserId(Integer.parseInt(CommentUserIds[i]));
-					  
-					  // String to Timestamp conversion
-					  try {
-				            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				            Date date = formatter.parse(CommentTimestamps[i]);
-				            Timestamp timeStampDate = new Timestamp(date.getTime());
-				            comment.setTimestamp(timeStampDate);
 	
-				        } catch (ParseException e) {
-				            System.out.println("Exception :" + e);
-				            return null;
-				        }
-					  CommentList.add(comment);
-				  }
-			  }
-			  
-			  //Add Persons
-			  List<Person> PersonList = new ArrayList<Person>();
-			  if (rs.getString("PersonId") != null) {
-				  String[] PersonIds = rs.getString("PersonId").split("&~&");
-				  String[] PersonFirstNames = new String[PersonIds.length];
-				  if (rs.getString("PersonFirstName") != null) {
-					  PersonFirstNames = rs.getString("PersonFirstName").split("&~&");
-				  }
-				  String[] PersonLastNames = new String[PersonIds.length];
-				  if (rs.getString("PersonLastName") != null) {
-					  PersonLastNames = rs.getString("PersonLastName").split("&~&");
-				  }
-				  String[] PersonBirthPlaces = new String[PersonIds.length];
-				  if (rs.getString("PersonBirthPlace") != null) {
-					  PersonBirthPlaces = rs.getString("PersonBirthPlace").split("&~&");
-				  }
-				  String[] PersonBirthDates = new String[PersonIds.length];
-				  if (rs.getString("PersonBirthDate") != null) {
-					  PersonBirthDates = rs.getString("PersonBirthDate").split("&~&");
-				  }
-				  String[] PersonDeathPlaces = new String[PersonIds.length];
-				  if (rs.getString("PersonDeathPlace") != null) {
-					  PersonDeathPlaces = rs.getString("PersonDeathPlace").split("&~&");
-				  }
-				  String[] PersonDeathDates = new String[PersonIds.length];
-				  if (rs.getString("PersonDeathDate") != null) {
-					  PersonDeathDates = rs.getString("PersonDeathDate").split("&~&");
-				  }
-				  String[] PersonLinks = new String[PersonIds.length];
-				  if (rs.getString("PersonLink") != null) {
-					  PersonLinks = rs.getString("PersonLink").split("&~&");
-				  }
-				  String[] PersonDescriptions = new String[PersonIds.length];
-				  if (rs.getString("PersonDescription") != null) {
-					  PersonDescriptions = rs.getString("PersonDescription").split("&~&");
-				  }
-				  for (int i = 0; i < PersonIds.length; i++) {
-					  Person person = new Person();
-					  person.setPersonId(Integer.parseInt(PersonIds[i]));
-					  if (PersonFirstNames[i] != null) {
-						  person.setFirstName(PersonFirstNames[i]);
-					  }
-					  if (PersonLastNames[i] != null) {
-						  person.setLastName(PersonLastNames[i]);
-					  }
-					  if (PersonBirthPlaces[i] != null) {
-						  person.setBirthPlace(PersonBirthPlaces[i]);
-					  }
-					  if (PersonBirthDates[i] != null) {
-						  person.setBirthDate(PersonBirthDates[i]);
-					  }
-					  if (PersonDeathPlaces[i] != null) {
-						  person.setDeathPlace(PersonDeathPlaces[i]);
-					  }
-					  if (PersonDeathDates[i] != null) {
-						  person.setDeathDate(PersonDeathDates[i]);
-					  }
-					  if (PersonLinks[i] != null) {
-						  person.setLink(PersonLinks[i]);
-					  }
-					  if (PersonDescriptions[i] != null) {
-						  person.setDescription(PersonDescriptions[i]);
+				  //Add Transcriptions
+				  List<Transcription> TranscriptionList = new ArrayList<Transcription>();
+				  if (rs.getString("TranscriptionId") != null) {				  
+					  String[] TranscriptionIds = rs.getString("TranscriptionId").split("&~&");
+					  String[] TranscriptionTexts = rs.getString("TranscriptionText").split("&~&");
+					  String[] TranscriptionTextNoTags = rs.getString("TranscriptionTextNoTags").split("&~&");
+					  String[] TranscriptionUserIds = rs.getString("TranscriptionUserId").split("&~&");
+					  String[] TranscriptionCurrentVersions = rs.getString("TranscriptionCurrentVersion").split("&~&");
+					  String[] TranscriptionTimestamps = rs.getString("TranscriptionTimestamp").split("&~&");
+					  String[] TranscriptionWP_UserIds = rs.getString("TranscriptionWP_UserId").split("&~&");
+					  String[] TranscriptionEuropeanaAnnotationIds = new String[TranscriptionIds.length];
+					  String[] TranscriptionNoTexts = rs.getString("TranscriptionNoText").split("&~&");
+					  if (rs.getString("TranscriptionEuropeanaAnnotationId") != null) {
+						  TranscriptionEuropeanaAnnotationIds = rs.getString("TranscriptionEuropeanaAnnotationId").split("&~&");
 					  }
 					  
-					  PersonList.add(person);
+					  String[] LanguageIdList = new String[TranscriptionIds.length];
+					  String[] LanguageNameList = new String[TranscriptionIds.length];
+					  String[] LanguageNameEnglishList = new String[TranscriptionIds.length];
+					  String[] LanguageShortNameList = new String[TranscriptionIds.length];
+					  String[] LanguageCodeList = new String[TranscriptionIds.length];
+					  if (rs.getString("TranscriptionLanguageId") != null) {
+						  LanguageIdList = rs.getString("TranscriptionLanguageId").split("&~&");
+					  }
+					  if (rs.getString("TranscriptionLanguageName") != null) {
+						  LanguageNameList = rs.getString("TranscriptionLanguageName").split("&~&");
+					  }
+					  if (rs.getString("TranscriptionLanguageNameEnglish") != null) {
+						  LanguageNameEnglishList = rs.getString("TranscriptionLanguageNameEnglish").split("&~&");
+					  }
+					  if (rs.getString("TranscriptionLanguageShortName") != null) {
+						  LanguageShortNameList = rs.getString("TranscriptionLanguageShortName").split("&~&");
+					  }
+					  if (rs.getString("TranscriptionLanguageCode") != null) {
+						  LanguageCodeList = rs.getString("TranscriptionLanguageCode").split("&~&");
+					  }
+					  
+					  for (int i = 0; i < TranscriptionIds.length; i++) {
+						  Transcription transcription = new Transcription();
+						  transcription.setTranscriptionId(Integer.parseInt(TranscriptionIds[i]));
+						  transcription.setText(TranscriptionTexts[i]);
+						  transcription.setTextNoTags(TranscriptionTextNoTags[i]);
+						  transcription.setUserId(Integer.parseInt(TranscriptionUserIds[i]));
+						  transcription.setCurrentVersion(TranscriptionCurrentVersions[i]);
+					      transcription.setTimestamp(TranscriptionTimestamps[i]);
+						  transcription.setWP_UserId(Integer.parseInt(TranscriptionWP_UserIds[i]));
+						  if (TranscriptionEuropeanaAnnotationIds[i] != null) {
+							  transcription.setEuropeanaAnnotationId(Integer.parseInt(TranscriptionEuropeanaAnnotationIds[i]));
+						  }
+						  transcription.setNoText(TranscriptionNoTexts[i]);
+	
+						  List<Language> LanguageList = new ArrayList<Language>();
+						  if (rs.getString("TranscriptionLanguageId") != null) {
+							  // Intitialize lists grouped by items
+							  String[] LanguageIds = LanguageIdList[i].split("�~�");
+							  String[] LanguageNames = LanguageNameList[i].split("�~�");
+							  String[] LanguageNameEnglishs = LanguageNameEnglishList[i].split("�~�");
+							  String[] LanguageShortNames = LanguageShortNameList[i].split("�~�");
+							  String[] LanguageCodes = LanguageCodeList[i].split("�~�");
+							  for (int j = 0; j < LanguageIds.length; j++) {
+								  if (!isNumeric(LanguageIds[j])) {
+									  continue;
+								  }
+								  Language language = new Language();
+								  language.setLanguageId(Integer.parseInt(LanguageIds[j]));
+								  language.setName(LanguageNames[j]);
+								  language.setNameEnglish(LanguageNameEnglishs[j]);
+								  language.setShortName(LanguageShortNames[j]);
+								  language.setCode(LanguageCodes[j]);
+								  LanguageList.add(language);
+							  }
+						  }
+						  transcription.setLanguages(LanguageList);
+						  TranscriptionList.add(transcription);
+					  }
 				  }
-			  }
-
-			  item.setProperties(PropertyList);
-			  item.setPlaces(PlaceList);
-			  item.setComments(CommentList);
-			  item.setPersons(PersonList);
-			  item.setTranscriptions(TranscriptionList);
-			  item.setAnnotations(AnnotationList);
-			  item.setTitle(rs.getString("Title"));
-			  item.setCompletionStatusColorCode(rs.getString("CompletionStatusColorCode"));
-			  item.setCompletionStatusName(rs.getString("CompletionStatusName"));
-			  item.setCompletionStatusId(rs.getInt("CompletionStatusId"));
-			  item.setTranscriptionStatusColorCode(rs.getString("TranscriptionStatusColorCode"));
-			  item.setTranscriptionStatusName(rs.getString("TranscriptionStatusName"));
-			  item.setTranscriptionStatusId(rs.getInt("TranscriptionStatusId"));
-			  item.setDescriptionStatusColorCode(rs.getString("DescriptionStatusColorCode"));
-			  item.setDescriptionStatusName(rs.getString("DescriptionStatusName"));
-			  item.setDescriptionStatusId(rs.getInt("DescriptionStatusId"));
-			  item.setLocationStatusColorCode(rs.getString("LocationStatusColorCode"));
-			  item.setLocationStatusName(rs.getString("LocationStatusName"));
-			  item.setLocationStatusId(rs.getInt("LocationStatusId"));
-			  item.setTaggingStatusColorCode(rs.getString("TaggingStatusColorCode"));
-			  item.setTaggingStatusName(rs.getString("TaggingStatusName"));
-			  item.setTaggingStatusId(rs.getInt("TaggingStatusId"));
-			  item.setAutomaticEnrichmentStatusColorCode(rs.getString("AutomaticEnrichmentStatusColorCode"));
-			  item.setAutomaticEnrichmentStatusName(rs.getString("AutomaticEnrichmentStatusName"));
-			  item.setAutomaticEnrichmentStatusId(rs.getInt("AutomaticEnrichmentStatusId"));
-			  item.setProjectItemId(rs.getInt("ProjectItemId"));
-			  item.setDescription(rs.getString("Description"));
-			  item.setDescriptionLanguage(rs.getInt("DescriptionLanguage"));
-			  item.setDateStart(rs.getTimestamp("DateStart"));
-			  item.setDateEnd(rs.getTimestamp("DateEnd"));
-			  item.setDatasetId(rs.getInt("DatasetId"));
-			  item.setImageLink(rs.getString("ImageLink"));
-			  item.setOrderIndex(rs.getInt("OrderIndex"));
-			  item.setTimestamp(rs.getString("Timestamp"));
-			  item.setLockedTime(rs.getString("LockedTime"));
-			  item.setLockedUser(rs.getInt("LockedUser"));
-			  item.setManifest(rs.getString("Manifest"));
-			  item.setStoryId(rs.getInt("StoryId"));
-			  item.setStorydcTitle(rs.getString("StorydcTitle"));
-			  item.setStorydcDescription(rs.getString("StorydcDescription"));
-			  item.setStoryedmLandingPage(rs.getString("StoryedmLandingPage"));
-			  item.setStoryExternalRecordId(rs.getString("StoryExternalRecordId"));
-			  item.setStoryPlaceName(rs.getString("StoryPlaceName"));
-			  item.setStoryPlaceLatitude(rs.getFloat("StoryPlaceLatitude"));
-			  item.setStoryPlaceLongitude(rs.getFloat("StoryPlaceLongitude"));
-			  item.setStoryPlaceZoom(rs.getString("StoryPlaceZoom"));
-			  item.setStoryPlaceLink(rs.getString("StoryPlaceLink"));
-			  item.setStoryPlaceComment(rs.getString("StoryPlaceComment"));
-			  item.setStoryPlaceUserId(rs.getInt("StoryPlaceUserId"));
-			  item.setStoryPlaceUserGenerated(rs.getString("StoryPlaceUserGenerated"));
-			  item.setStorydcCreator(rs.getString("StorydcCreator"));
-			  item.setStorydcSource(rs.getString("StoryedmRights"));
-			  item.setStorydcSource(rs.getString("StorydcSource"));
-			  item.setStoryedmCountry(rs.getString("StoryedmCountry"));
-			  item.setStoryedmDataProvider(rs.getString("StoryedmDataProvider"));
-			  item.setStoryedmProvider(rs.getString("StoryedmProvider"));
-			  item.setStoryedmYear(rs.getString("StoryedmYear"));
-			  item.setStorydcPublisher(rs.getString("StorydcPublisher"));
-			  item.setStorydcCoverage(rs.getString("StorydcCoverage"));
-			  item.setStorydcDate(rs.getString("StorydcDate"));
-			  item.setStorydcType(rs.getString("StorydcType"));
-			  item.setStorydcRelation(rs.getString("StorydcRelation"));
-			  item.setStorydctermsMedium(rs.getString("StorydctermsMedium"));
-			  item.setStoryedmDatasetName(rs.getString("StoryedmDatasetName"));
-			  item.setStorydcContributor(rs.getString("StorydcContributor"));
-			  item.setStoryedmRights(rs.getString("StoryedmRights"));
-			  item.setStoryedmBegin(rs.getString("StoryedmBegin"));
-			  item.setStoryedmEnd(rs.getString("StoryedmEnd"));
-			  item.setStoryedmIsShownAt(rs.getString("StoryedmIsShownAt"));
-			  item.setStorydcRights(rs.getString("StorydcRights"));
-			  item.setStorydcLanguage(rs.getString("StorydcLanguage"));
-			  item.setStoryedmLanguage(rs.getString("StoryedmLanguage"));
-			  item.setStoryProjectId(rs.getInt("StoryProjectId"));
-			  item.setStorySummary(rs.getString("StorySummary"));
-			  item.setStoryParentStory(rs.getInt("StoryParentStory"));
-			  item.setStorySearchText(rs.getString("StorySearchText"));
-			  item.setStoryDateStart(rs.getTimestamp("StoryDateStart"));
-			  item.setStoryDateEnd(rs.getTimestamp("StoryDateEnd"));
-			  item.setStoryOrderIndex(rs.getInt("StoryOrderIndex"));
-
-			  itemList.add(item);
-		   }
+				  
+				  
+				  //Add Annotations
+				  List<Annotation> AnnotationList = new ArrayList<Annotation>();
+				  if (rs.getString("AnnotationId") != null) {
+					  String[] AnnotationIds = rs.getString("AnnotationId").split("&~&");
+					  String[] AnnotationTexts = rs.getString("AnnotationText").split("&~&");
+					  String[] AnnotationUserIds = rs.getString("AnnotationUserId").split("&~&");
+					  String[] AnnotationX_Coords = rs.getString("AnnotationX_Coord").split(",", -1);
+					  String[] AnnotationY_Coords = rs.getString("AnnotationY_Coord").split(",", -1);
+					  String[] AnnotationWidths = rs.getString("AnnotationWidth").split(",", -1);
+					  String[] AnnotationHeights = rs.getString("AnnotationHeight").split(",", -1);
+					  String[] AnnotationTypes = rs.getString("AnnotationType").split("&~&");
+					  for (int i = 0; i < AnnotationIds.length; i++) {
+						  Annotation annotation = new Annotation();
+						  annotation.setAnnotationId(Integer.parseInt(AnnotationIds[i]));
+						  annotation.setText(AnnotationTexts[i]);
+						  annotation.setUserId(Integer.parseInt(AnnotationUserIds[i]));
+						  annotation.setX_Coord(Float.parseFloat(AnnotationX_Coords[i]));
+						  annotation.setY_Coord(Float.parseFloat(AnnotationY_Coords[i]));
+						  annotation.setHeight(Float.parseFloat(AnnotationWidths[i]));
+						  annotation.setWidth(Float.parseFloat(AnnotationHeights[i]));
+						  annotation.setAnnotationType(AnnotationTypes[i]);
+						  AnnotationList.add(annotation);
+					  }
+				  }
+				  
+	
+				  //Add Comments
+				  List<Comment> CommentList = new ArrayList<Comment>();
+				  if (rs.getString("CommentId") != null) {
+					  String[] CommentIds = rs.getString("CommentId").split("&~&");
+					  String[] CommentTexts = rs.getString("CommentText").split("&~&");
+					  String[] CommentUserIds = rs.getString("CommentUserId").split("&~&");
+					  String[] CommentTimestamps = rs.getString("CommentTimestamp").split("&~&");
+					  for (int i = 0; i < CommentIds.length; i++) {
+						  Comment comment = new Comment();
+						  comment.setCommentId(Integer.parseInt(CommentIds[i]));
+						  comment.setText(CommentTexts[i]);
+						  comment.setUserId(Integer.parseInt(CommentUserIds[i]));
+						  
+						  // String to Timestamp conversion
+						  try {
+					            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					            Date date = formatter.parse(CommentTimestamps[i]);
+					            Timestamp timeStampDate = new Timestamp(date.getTime());
+					            comment.setTimestamp(timeStampDate);
 		
-		   // Clean-up environment
-		   rs.close();
-		   stmt.close();
-		   conn.close();
-		   } catch(SQLException se) {
-		       //Handle errors for JDBC
-			   se.printStackTrace();
-		   } catch (ClassNotFoundException e) {
-			   e.printStackTrace();
-		}
+					        } catch (ParseException e) {
+					            System.out.println("Exception :" + e);
+					            return null;
+					        }
+						  CommentList.add(comment);
+					  }
+				  }
+				  
+				  //Add Persons
+				  List<Person> PersonList = new ArrayList<Person>();
+				  if (rs.getString("PersonId") != null) {
+					  String[] PersonIds = rs.getString("PersonId").split("&~&");
+					  String[] PersonFirstNames = new String[PersonIds.length];
+					  if (rs.getString("PersonFirstName") != null) {
+						  PersonFirstNames = rs.getString("PersonFirstName").split("&~&");
+					  }
+					  String[] PersonLastNames = new String[PersonIds.length];
+					  if (rs.getString("PersonLastName") != null) {
+						  PersonLastNames = rs.getString("PersonLastName").split("&~&");
+					  }
+					  String[] PersonBirthPlaces = new String[PersonIds.length];
+					  if (rs.getString("PersonBirthPlace") != null) {
+						  PersonBirthPlaces = rs.getString("PersonBirthPlace").split("&~&");
+					  }
+					  String[] PersonBirthDates = new String[PersonIds.length];
+					  if (rs.getString("PersonBirthDate") != null) {
+						  PersonBirthDates = rs.getString("PersonBirthDate").split("&~&");
+					  }
+					  String[] PersonDeathPlaces = new String[PersonIds.length];
+					  if (rs.getString("PersonDeathPlace") != null) {
+						  PersonDeathPlaces = rs.getString("PersonDeathPlace").split("&~&");
+					  }
+					  String[] PersonDeathDates = new String[PersonIds.length];
+					  if (rs.getString("PersonDeathDate") != null) {
+						  PersonDeathDates = rs.getString("PersonDeathDate").split("&~&");
+					  }
+					  String[] PersonLinks = new String[PersonIds.length];
+					  if (rs.getString("PersonLink") != null) {
+						  PersonLinks = rs.getString("PersonLink").split("&~&");
+					  }
+					  String[] PersonDescriptions = new String[PersonIds.length];
+					  if (rs.getString("PersonDescription") != null) {
+						  PersonDescriptions = rs.getString("PersonDescription").split("&~&");
+					  }
+					  for (int i = 0; i < PersonIds.length; i++) {
+						  Person person = new Person();
+						  person.setPersonId(Integer.parseInt(PersonIds[i]));
+						  if (PersonFirstNames[i] != null) {
+							  person.setFirstName(PersonFirstNames[i]);
+						  }
+						  if (PersonLastNames[i] != null) {
+							  person.setLastName(PersonLastNames[i]);
+						  }
+						  if (PersonBirthPlaces[i] != null) {
+							  person.setBirthPlace(PersonBirthPlaces[i]);
+						  }
+						  if (PersonBirthDates[i] != null) {
+							  person.setBirthDate(PersonBirthDates[i]);
+						  }
+						  if (PersonDeathPlaces[i] != null) {
+							  person.setDeathPlace(PersonDeathPlaces[i]);
+						  }
+						  if (PersonDeathDates[i] != null) {
+							  person.setDeathDate(PersonDeathDates[i]);
+						  }
+						  if (PersonLinks[i] != null) {
+							  person.setLink(PersonLinks[i]);
+						  }
+						  if (PersonDescriptions[i] != null) {
+							  person.setDescription(PersonDescriptions[i]);
+						  }
+						  
+						  PersonList.add(person);
+					  }
+				  }
+	
+				  item.setProperties(PropertyList);
+				  item.setPlaces(PlaceList);
+				  item.setComments(CommentList);
+				  item.setPersons(PersonList);
+				  item.setTranscriptions(TranscriptionList);
+				  item.setAnnotations(AnnotationList);
+				  item.setTitle(rs.getString("Title"));
+				  item.setCompletionStatusColorCode(rs.getString("CompletionStatusColorCode"));
+				  item.setCompletionStatusName(rs.getString("CompletionStatusName"));
+				  item.setCompletionStatusId(rs.getInt("CompletionStatusId"));
+				  item.setTranscriptionStatusColorCode(rs.getString("TranscriptionStatusColorCode"));
+				  item.setTranscriptionStatusName(rs.getString("TranscriptionStatusName"));
+				  item.setTranscriptionStatusId(rs.getInt("TranscriptionStatusId"));
+				  item.setDescriptionStatusColorCode(rs.getString("DescriptionStatusColorCode"));
+				  item.setDescriptionStatusName(rs.getString("DescriptionStatusName"));
+				  item.setDescriptionStatusId(rs.getInt("DescriptionStatusId"));
+				  item.setLocationStatusColorCode(rs.getString("LocationStatusColorCode"));
+				  item.setLocationStatusName(rs.getString("LocationStatusName"));
+				  item.setLocationStatusId(rs.getInt("LocationStatusId"));
+				  item.setTaggingStatusColorCode(rs.getString("TaggingStatusColorCode"));
+				  item.setTaggingStatusName(rs.getString("TaggingStatusName"));
+				  item.setTaggingStatusId(rs.getInt("TaggingStatusId"));
+				  item.setAutomaticEnrichmentStatusColorCode(rs.getString("AutomaticEnrichmentStatusColorCode"));
+				  item.setAutomaticEnrichmentStatusName(rs.getString("AutomaticEnrichmentStatusName"));
+				  item.setAutomaticEnrichmentStatusId(rs.getInt("AutomaticEnrichmentStatusId"));
+				  item.setProjectItemId(rs.getInt("ProjectItemId"));
+				  item.setDescription(rs.getString("Description"));
+				  item.setDescriptionLanguage(rs.getInt("DescriptionLanguage"));
+				  item.setDateStart(rs.getTimestamp("DateStart"));
+				  item.setDateEnd(rs.getTimestamp("DateEnd"));
+				  item.setDatasetId(rs.getInt("DatasetId"));
+				  item.setImageLink(rs.getString("ImageLink"));
+				  item.setOrderIndex(rs.getInt("OrderIndex"));
+				  item.setTimestamp(rs.getString("Timestamp"));
+				  item.setLockedTime(rs.getString("LockedTime"));
+				  item.setLockedUser(rs.getInt("LockedUser"));
+				  item.setManifest(rs.getString("Manifest"));
+				  item.setStoryId(rs.getInt("StoryId"));
+				  item.setStorydcTitle(rs.getString("StorydcTitle"));
+				  item.setStorydcDescription(rs.getString("StorydcDescription"));
+				  item.setStoryedmLandingPage(rs.getString("StoryedmLandingPage"));
+				  item.setStoryExternalRecordId(rs.getString("StoryExternalRecordId"));
+				  item.setStoryPlaceName(rs.getString("StoryPlaceName"));
+				  item.setStoryPlaceLatitude(rs.getFloat("StoryPlaceLatitude"));
+				  item.setStoryPlaceLongitude(rs.getFloat("StoryPlaceLongitude"));
+				  item.setStoryPlaceZoom(rs.getString("StoryPlaceZoom"));
+				  item.setStoryPlaceLink(rs.getString("StoryPlaceLink"));
+				  item.setStoryPlaceComment(rs.getString("StoryPlaceComment"));
+				  item.setStoryPlaceUserId(rs.getInt("StoryPlaceUserId"));
+				  item.setStoryPlaceUserGenerated(rs.getString("StoryPlaceUserGenerated"));
+				  item.setStorydcCreator(rs.getString("StorydcCreator"));
+				  item.setStorydcSource(rs.getString("StoryedmRights"));
+				  item.setStorydcSource(rs.getString("StorydcSource"));
+				  item.setStoryedmCountry(rs.getString("StoryedmCountry"));
+				  item.setStoryedmDataProvider(rs.getString("StoryedmDataProvider"));
+				  item.setStoryedmProvider(rs.getString("StoryedmProvider"));
+				  item.setStoryedmYear(rs.getString("StoryedmYear"));
+				  item.setStorydcPublisher(rs.getString("StorydcPublisher"));
+				  item.setStorydcCoverage(rs.getString("StorydcCoverage"));
+				  item.setStorydcDate(rs.getString("StorydcDate"));
+				  item.setStorydcType(rs.getString("StorydcType"));
+				  item.setStorydcRelation(rs.getString("StorydcRelation"));
+				  item.setStorydctermsMedium(rs.getString("StorydctermsMedium"));
+				  item.setStoryedmDatasetName(rs.getString("StoryedmDatasetName"));
+				  item.setStorydcContributor(rs.getString("StorydcContributor"));
+				  item.setStoryedmRights(rs.getString("StoryedmRights"));
+				  item.setStoryedmBegin(rs.getString("StoryedmBegin"));
+				  item.setStoryedmEnd(rs.getString("StoryedmEnd"));
+				  item.setStoryedmIsShownAt(rs.getString("StoryedmIsShownAt"));
+				  item.setStorydcRights(rs.getString("StorydcRights"));
+				  item.setStorydcLanguage(rs.getString("StorydcLanguage"));
+				  item.setStoryedmLanguage(rs.getString("StoryedmLanguage"));
+				  item.setStoryProjectId(rs.getInt("StoryProjectId"));
+				  item.setStorySummary(rs.getString("StorySummary"));
+				  item.setStoryParentStory(rs.getInt("StoryParentStory"));
+				  item.setStorySearchText(rs.getString("StorySearchText"));
+				  item.setStoryDateStart(rs.getTimestamp("StoryDateStart"));
+				  item.setStoryDateEnd(rs.getTimestamp("StoryDateEnd"));
+				  item.setStoryOrderIndex(rs.getInt("StoryOrderIndex"));
+	
+				  itemList.add(item);
+			   }
+			
+			   // Clean-up environment
+			   rs.close();
+			   stmt.close();
+			   conn.close();
+			   } catch(SQLException se) {
+			       //Handle errors for JDBC
+				   se.printStackTrace();
+			   } finally {
+				    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+				    try { conn.close(); } catch (Exception e) { /* ignored */ }
+			   }
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
+				e1.printStackTrace();
+			} catch (ClassNotFoundException e1) {
+				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 	    Gson gsonBuilder = new GsonBuilder().create();
