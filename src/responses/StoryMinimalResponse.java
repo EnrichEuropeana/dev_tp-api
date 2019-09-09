@@ -140,23 +140,70 @@ public class StoryMinimalResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo, @QueryParam("pa") int page) throws SQLException {
-		String offset = "";
-		if (page > 0) {
-			offset = " OFFSET " + ((page - 1) * 25);
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		String query = "SELECT \r\n" + 
+				"	s.StoryId,\r\n" + 
+				"    MIN(b.ImageLink) as PreviewImageLink,\r\n" + 
+				"	GROUP_CONCAT(Name),\r\n" + 
+				"	GROUP_CONCAT(Count),\r\n" + 
+				"    s.StorydcTitle as StorydcTitle,\r\n" + 
+				"    s.StorydcDescription as StorydcDescription\r\n" + 
+				"FROM (\r\n" + 
+				"	SELECT \r\n" + 
+				"		StoryId, \r\n" + 
+				"        MIN(ItemId) as ItemId,\r\n" + 
+				"		c.Name as Name,\r\n" + 
+				"		Count(*) as Count\r\n" + 
+				"	FROM Item i\r\n" + 
+				"	JOIN CompletionStatus c ON c.CompletionStatusId = i.CompletionStatusId \r\n";
+		if (queryParams.containsKey("storyId")) {
+			String[] values = queryParams.getFirst("storyId").split(",");
+			query += " WHERE StoryId IN (";
+		    int valueCount = values.length;
+		    int i = 1;
+		    for(String value : values) {
+		    	query += value;
+			    if (i < valueCount) {
+			    	query += ", ";
+			    }
+			    i++;
+		    }
 		}
-		String query = "SELECT s.StoryId as StoryId \r\n" + 
-				"				, `dc:title` as StorydcTitle\r\n" + 
-				"				, `dc:description` as StorydcDescription\r\n" + 
-				"				, i.ImageLink as StoryPreviewImageLink\r\n" + 
-				"					FROM Story s " +
-				"					JOIN " +
-				"						(SELECT StoryId, ImageLink, ItemId FROM Item WHERE ItemId IN\r\n" + 
-				"							(\r\n" + 
-				"								SELECT MIN(ItemId) FROM Item GROUP BY StoryId\r\n" + 
-				"							) LIMIT 25 " + offset +
-				"						) i " +
-				" 					ON s.StoryId = i.StoryId " + 
-				"				    ORDER BY StoryId DESC";
+	    query += ") ";
+	    query += "	GROUP BY StoryId, c.Name\r\n" + 
+				") a\r\n" + 
+				"JOIN \r\n" + 
+				"	(\r\n" + 
+				"	SELECT \r\n" + 
+				"		ItemId,\r\n" + 
+				"        ImageLink\r\n" + 
+				"	FROM Item i\r\n";
+		if (queryParams.containsKey("storyId")) {
+			String[] values = queryParams.getFirst("storyId").split(",");
+			query += " WHERE StoryId IN (";
+		    int valueCount = values.length;
+		    int i = 1;
+		    for(String value : values) {
+		    	query += value;
+			    if (i < valueCount) {
+			    	query += ", ";
+			    }
+			    i++;
+		    }
+		}
+	    query += ") ";
+	    query += "    ) b ON a.ItemId = b.ItemId\r\n" + 
+				"JOIN \r\n" + 
+				"	(\r\n" + 
+				"    SELECT \r\n" + 
+				"		StoryId as StoryId,\r\n" + 
+				"		`dc:title` as StorydcTitle,\r\n" + 
+				"		`dc:description` as StorydcDescription\r\n" + 
+				"	FROM\r\n" + 
+				"		Story\r\n" + 
+				"    WHERE StoryId IN (5847, 5850)\r\n" + 
+				"	) s ON s.StoryId = a.StoryId\r\n" + 
+				"GROUP BY StoryId;";
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
 		//ResponseBuilder rBuild = Response.ok(query);
