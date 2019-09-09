@@ -127,7 +127,7 @@ public class TeamUserResponse {
 	@Path("/{teamId}/{userId}")
 	@DELETE
 	public String delete(@PathParam("teamId") int teamId, @PathParam("userId") int userId) throws SQLException {
-		String resource = executeQuery("DELETE FROM TeamUser WHERE UserId = " + userId + " AND TeamId = " + teamId, "Delete");
+		String resource = executeQuery("DELETE FROM TeamUser WHERE UserId = (SELECT UserId FROM User WHERE WP_UserId = " + userId + ") AND TeamId = " + teamId, "Delete");
 		return resource;
 	}
 	

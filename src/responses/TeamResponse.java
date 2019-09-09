@@ -169,6 +169,7 @@ public class TeamResponse {
 		    }
 		    query += ")";
 		}
+		query += " ORDER BY TeamId DESC";
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
 		//ResponseBuilder rBuild = Response.ok(query);
