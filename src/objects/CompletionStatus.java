@@ -5,6 +5,7 @@ public class CompletionStatus {
 	public String Name; 
 	public String ColorCode; 
 	public String ColorCodeGradient; 
+	public Integer Amount;
 	
 	public void setCompletionStatusId (Integer CompletionStatusId) {
 		this.CompletionStatusId = CompletionStatusId;
@@ -19,5 +20,9 @@ public class CompletionStatus {
 
 	public void setColorCodeGradient(String colorCodeGradient) {
 		ColorCodeGradient = colorCodeGradient;
+	}
+
+	public void setAmount(Integer amount) {
+		Amount = amount;
 	}
 }

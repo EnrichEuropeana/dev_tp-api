@@ -15,6 +15,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 
 import objects.Annotation;
 import objects.Comment;
+import objects.CompletionStatus;
 import objects.Item;
 import objects.Place;
 import objects.Property;
@@ -88,25 +89,27 @@ public class StoryMinimalResponse {
 			  story.setdcTitle(rs.getString("StorydcTitle"));
 			  story.setdcDescription(rs.getString("StorydcDescription"));
 			  story.setPreviewImageLink(rs.getString("StoryPreviewImageLink"));
-			   /*
-			  // Iterate through Items of the Story
-			  List<Item> ItemList = new ArrayList<Item>();
-			  if (rs.getString("ItemId") != null) {
-				  String[] ItemIds = rs.getString("ItemId").split("§~§");
-				  String[] ItemCompletionStatusNames = rs.getString("CompletionStatusName").split("§~§");
-				  String[] ItemCompletionStatusIds = rs.getString("CompletionStatusId").split("§~§");
+			  
+			  // Iterate through CompletionStatus of the Items
+			  List<CompletionStatus> CompletionStatusList = new ArrayList<CompletionStatus>();
+			  if (rs.getString("CompletionStatus") != null) {
+				  String[] CompletionStatus = rs.getString("CompletionStatus").split(",");
+				  String[] ColorCodes = rs.getString("ColorCode").split(",");
+				  String[] ColorCodeGradients = rs.getString("ColorCodeGradient").split(",");
+				  String[] Amounts = rs.getString("Amount").split(",");
 				  
 
-				  for (int j = 0; j < ItemIds.length; j++) {
-					  Item item = new Item();
-					  item.setItemId(Integer.parseInt(ItemIds[j]));
-					  item.setCompletionStatusName(ItemCompletionStatusNames[j]);
-					  item.setCompletionStatusId(Integer.parseInt(ItemCompletionStatusIds[j]));
+				  for (int j = 0; j < CompletionStatus.length; j++) {
+					  CompletionStatus completionStatus = new CompletionStatus();
+					  completionStatus.setName(CompletionStatus[j]);
+					  completionStatus.setColorCode(ColorCodes[j]);
+					  completionStatus.setColorCodeGradient(ColorCodeGradients[j]);
+					  completionStatus.setAmount(Integer.parseInt(Amounts[j]));
 					  
-					  ItemList.add(item);
+					  CompletionStatusList.add(completionStatus);
 				  }
 			  }
-			  story.setItems(ItemList);*/
+			  story.setCompletionStatus(CompletionStatusList);
 			  storyList.add(story);
 		   }
 		
@@ -144,15 +147,19 @@ public class StoryMinimalResponse {
 		String query = "SELECT \r\n" + 
 				"	s.StoryId,\r\n" + 
 				"    MIN(b.ImageLink) as PreviewImageLink,\r\n" + 
-				"	GROUP_CONCAT(Name),\r\n" + 
-				"	GROUP_CONCAT(Count),\r\n" + 
+				"	GROUP_CONCAT(IFNULL(CompletionStatus, 'NULL')),\r\n" + 
+				"	GROUP_CONCAT(IFNULL(ColorCode, 'NULL')),\r\n" + 
+				"	GROUP_CONCAT(IFNULL(ColorCodeGradient, 'NULL')),\r\n" + 
+				"	GROUP_CONCAT(IFNULL(Count, 'NULL')),\r\n" + 
 				"    s.StorydcTitle as StorydcTitle,\r\n" + 
 				"    s.StorydcDescription as StorydcDescription\r\n" + 
 				"FROM (\r\n" + 
 				"	SELECT \r\n" + 
 				"		StoryId, \r\n" + 
 				"        MIN(ItemId) as ItemId,\r\n" + 
-				"		c.Name as Name,\r\n" + 
+				"		c.Name as CompletionStatus,\r\n" + 
+				"		c.ColorCode as ColorCode,\r\n" + 
+				"		c.ColorCodeGradient as ColorCodeGradient,\r\n" + 
 				"		Count(*) as Count\r\n" + 
 				"	FROM Item i\r\n" + 
 				"	JOIN CompletionStatus c ON c.CompletionStatusId = i.CompletionStatusId \r\n";
@@ -168,9 +175,9 @@ public class StoryMinimalResponse {
 			    }
 			    i++;
 		    }
+		    query += ") ";
 		}
-	    query += ") ";
-	    query += "	GROUP BY StoryId, c.Name\r\n" + 
+	    query += "	GROUP BY StoryId, c.Name, c.ColorCode, c.ColorCodeGradient\r\n" + 
 				") a\r\n" + 
 				"JOIN \r\n" + 
 				"	(\r\n" + 
@@ -190,8 +197,8 @@ public class StoryMinimalResponse {
 			    }
 			    i++;
 		    }
+		    query += ") ";
 		}
-	    query += ") ";
 	    query += "    ) b ON a.ItemId = b.ItemId\r\n" + 
 				"JOIN \r\n" + 
 				"	(\r\n" + 
@@ -201,7 +208,6 @@ public class StoryMinimalResponse {
 				"		`dc:description` as StorydcDescription\r\n" + 
 				"	FROM\r\n" + 
 				"		Story\r\n" + 
-				"    WHERE StoryId IN (5847, 5850)\r\n" + 
 				"	) s ON s.StoryId = a.StoryId\r\n" + 
 				"GROUP BY StoryId;";
 		String resource = executeQuery(query, "Select");
