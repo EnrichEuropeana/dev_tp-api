@@ -146,11 +146,11 @@ public class StoryMinimalResponse {
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		String query = "SELECT \r\n" + 
 				"	s.StoryId,\r\n" + 
-				"    MIN(b.ImageLink) as PreviewImageLink,\r\n" + 
-				"	GROUP_CONCAT(IFNULL(CompletionStatus, 'NULL')),\r\n" + 
-				"	GROUP_CONCAT(IFNULL(ColorCode, 'NULL')),\r\n" + 
-				"	GROUP_CONCAT(IFNULL(ColorCodeGradient, 'NULL')),\r\n" + 
-				"	GROUP_CONCAT(IFNULL(Count, 'NULL')),\r\n" + 
+				"    MIN(b.ImageLink) as StoryPreviewImageLink,\r\n" + 
+				"	GROUP_CONCAT(IFNULL(CompletionStatus, 'NULL')) AS CompletionStatus,\r\n" + 
+				"	GROUP_CONCAT(IFNULL(ColorCode, 'NULL')) AS ColorCode,\r\n" + 
+				"	GROUP_CONCAT(IFNULL(ColorCodeGradient, 'NULL')) AS ColorCodeGradient,\r\n" + 
+				"	GROUP_CONCAT(IFNULL(Count, 'NULL')) AS Amount,\r\n" + 
 				"    s.StorydcTitle as StorydcTitle,\r\n" + 
 				"    s.StorydcDescription as StorydcDescription\r\n" + 
 				"FROM (\r\n" + 
