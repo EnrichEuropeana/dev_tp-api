@@ -197,10 +197,10 @@ public class RankingResponse {
 					    " 	s.TeamName as TeamName, \r\n" +
 						"    SUM(s.Miles) as Miles,\r\n" + 
 						"    SUM(s.Miles) / (SELECT COUNT(*) FROM TeamUser WHERE TeamId = s.TeamId) as MilesPerPerson,\r\n" + 
-						"    SUM(s.Locations) Locations,\r\n" + 
-						"    SUM(s.TranscriptionCharacters) TranscriptionCharacters,\r\n" + 
-						"    SUM(s.DescriptionCharacters) DescriptionCharacters,\r\n" + 
-						"    SUM(s.Enrichments) Enrichments\r\n" + 
+						"    SUM(s.Locations) as Locations,\r\n" + 
+						"    SUM(s.TranscriptionCharacters) as TranscriptionCharacters,\r\n" + 
+						"    SUM(s.DescriptionCharacters) as DescriptionCharacters,\r\n" + 
+						"    SUM(s.Enrichments) as Enrichments\r\n" + 
 						"FROM \r\n" + 
 						"(\r\n" + 
 						"	SELECT \r\n" + 
@@ -209,8 +209,8 @@ public class RankingResponse {
 						"        u.UserId as UserId,\r\n" + 
 						"		s.Amount * st.Rate as Miles,\r\n" + 
 						"		CASE WHEN st.Name = \"Location\" THEN Amount ELSE 0 END Locations,\r\n" + 
-						"		CASE WHEN st.Name = \"Transcription\" THEN (Amount - 10) ELSE 0 END TranscriptionCharacters,\r\n" + 
-						"		CASE WHEN st.Name = \"Description\" THEN (Amount - 10) ELSE 0 END DescriptionCharacters,\r\n" + 
+						"		CASE WHEN st.Name = \"Transcription\" THEN Amount ELSE 0 END TranscriptionCharacters,\r\n" + 
+						"		CASE WHEN st.Name = \"Description\" THEN Amount ELSE 0 END DescriptionCharacters,\r\n" + 
 						"		CASE WHEN st.Name = \"Enrichment\" THEN Amount ELSE 0 END Enrichments,\r\n" + 
 						"        s.Timestamp as Timestamp\r\n" + 
 						"	From Score s\r\n" + 

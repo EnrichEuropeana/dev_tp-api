@@ -31,83 +31,95 @@ public class ScoreResponse {
 		   List<Score> scoreList = new ArrayList<Score>();
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
-	            Properties prop = new Properties();
-
-	            // load a properties file
-	            prop.load(input);
-
-	            // get the score value and print it out
-	            final String DB_URL = prop.getProperty("DB_URL");
-	            final String USER = prop.getProperty("USER");
-	            final String PASS = prop.getProperty("PASS");
-		   // Register JDBC driver
+				Properties prop = new Properties();
+				
+				// Load a properties file
+				prop.load(input);
+				
+				// Save property values
+				final String DB_URL = prop.getProperty("DB_URL");
+				final String USER = prop.getProperty("USER");
+				final String PASS = prop.getProperty("PASS");
+				
+				// Register JDBC driver
 				Class.forName("com.mysql.jdbc.Driver");
 				
-				   // Open a connection
-				   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
-				   // Execute SQL query
-				   Statement stmt = conn.createStatement();
-		   try {
-		   if (type != "Select") {
-			   if (type == "ScoreId") {
-				   ResultSet rs = stmt.executeQuery(query);
-				   if(rs.next() == false){
-					   return "";
-				   }
-				   else {
-					   return rs.getString("ScoreId");
-				   }
-			   }
-			   else {
-				   int success = stmt.executeUpdate(query);
-				   if (success > 0) {
-					   stmt.close();
-					   conn.close();
-					   return type +" succesful";
-				   }
-				   else {
-					   stmt.close();
-					   conn.close();
-					   return type +" could not be executed";
-				   }
-			   }
-		   }
-		   ResultSet rs = stmt.executeQuery(query);
-		   
-		   // Extract data from result set
-		   while(rs.next()){
-		      //Retrieve by column name
-			  Score score = new Score();
-			  score.setScoreId(rs.getInt("ScoreId"));
-			  score.setAmount(rs.getInt("Amount"));
-			  score.setUserId(rs.getInt("UserId"));
-			  score.setScoreTypeId(rs.getInt("ScoreTypeId"));
-			  score.setScoreType(rs.getString("ScoreType"));
-			  score.setRate(rs.getFloat("Rate"));
-			  score.setItemId(rs.getInt("ItemId"));
-			  score.setTimestamp(rs.getString("Timestamp"));
-			  scoreList.add(score);
-		   }
-		
-		   // Clean-up environment
-		   rs.close();
-		   stmt.close();
-		   conn.close();
-		   } catch(SQLException se) {
-		       //Handle errors for JDBC
-			   se.printStackTrace();
-		   } finally {
-			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
-			    try { conn.close(); } catch (Exception e) { /* ignored */ }
-		   }
+				// Open a connection
+			    Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+			    // Execute SQL query
+			    Statement stmt = conn.createStatement();
+			    try {
+				    if (type != "Select") {
+					    if (type == "ScoreId") {
+					    	// Return ScoreId as simple String
+						    ResultSet rs = stmt.executeQuery(query);
+						    if(rs.next() == false){
+							    rs.close();
+				 			    stmt.close();
+				 			    conn.close();
+							    return "";
+						    }
+						    else {
+						    	String result = rs.getString("ScoreId");
+							    rs.close();
+				 			    stmt.close();
+				 			    conn.close();
+							    return result;
+						    }
+					    }
+					    else {
+					    	// Execute Insert, Update or Delete queries
+						    int success = stmt.executeUpdate(query);
+				 		    if (success > 0) {
+ 							    stmt.close();
+ 							    conn.close();
+ 							    return type +" succesful";
+ 						    }
+ 						    else {
+ 							    stmt.close();
+ 							    conn.close();
+							    return "";
+						    }
+					   }
+				    }
+				    // Save query results as Result set
+				    ResultSet rs = stmt.executeQuery(query);
+				   
+				    // Extract data from result set
+				    while(rs.next()){
+				    	//Retrieve by column name
+				    	Score score = new Score();
+				    	score.setScoreId(rs.getInt("ScoreId"));
+				    	score.setAmount(rs.getInt("Amount"));
+				    	score.setUserId(rs.getInt("UserId"));
+				    	score.setScoreTypeId(rs.getInt("ScoreTypeId"));
+				    	score.setScoreType(rs.getString("ScoreType"));
+				    	score.setRate(rs.getFloat("Rate"));
+				    	score.setItemId(rs.getInt("ItemId"));
+				    	score.setTimestamp(rs.getString("Timestamp"));
+				    	scoreList.add(score);
+				    }
+				
+				    // Close connections etc
+				    rs.close();
+	 			    stmt.close();
+	 			    conn.close();
+				} catch(SQLException se) {
+				    se.printStackTrace();
+				    return "";
+				} finally {
+					// Close connections in case of errors
+				    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+				    try { conn.close(); } catch (Exception e) { /* ignored */ }
+			    }
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			} catch (ClassNotFoundException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+	    // Build Json from query results
 	    Gson gsonBuilder = new GsonBuilder().create();
 	    String result = gsonBuilder.toJson(scoreList);
 	    return result;
@@ -118,22 +130,27 @@ public class ScoreResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
-		String query = "SELECT * FROM (" +
-				"SELECT \r\n" + 
-				"	s.ScoreId as ScoreId,\r\n" + 
-				"	s.Amount as Amount,\r\n" + 
-				"   s.ItemId as ItemId,\r\n" + 
-				"   s.UserId as UserId,\r\n" + 
-				"	st.ScoreTypeId as ScoreTypeId,\r\n" + 
-				"    st.Name as ScoreType,\r\n" + 
-				"    st.Rate as Rate,\r\n" + 
-				"    s.Timestamp as Timestamp\r\n" + 
-				"FROM Score s\r\n" + 
-				"JOIN ScoreType st\r\n" + 
-				"ON s.ScoreTypeId = st.ScoreTypeId) a\r\n" + 
-				"WHERE 1";
+		// Build base query
+		String query = "SELECT * FROM " +
+						"(" +
+							"SELECT " + 
+							"	s.ScoreId as ScoreId," + 
+							"	s.Amount as Amount," + 
+							"   s.ItemId as ItemId," + 
+							"   s.UserId as UserId," + 
+							"	st.ScoreTypeId as ScoreTypeId," + 
+							"    st.Name as ScoreType," + 
+							"    st.Rate as Rate," + 
+							"    s.Timestamp as Timestamp " + 
+							"FROM Score s " + 
+							"JOIN ScoreType st " + 
+							"ON s.ScoreTypeId = st.ScoreTypeId" +
+						") a " + 
+						"WHERE 1";
+		// Get url parameters
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		
+		// Add query conditions form parameters
 		for(String key : queryParams.keySet()){
 			String[] values = queryParams.getFirst(key).split(",");
 			query += " AND (";
@@ -148,8 +165,9 @@ public class ScoreResponse {
 		    }
 		    query += ")";
 		}
-		String resource = executeQuery(query, "Select");
-		ResponseBuilder rBuild = Response.ok(resource);
+		String result = executeQuery(query, "Select");
+
+		ResponseBuilder rBuild = Response.ok(result);
         return rBuild.build();
 	}
 	
@@ -158,73 +176,73 @@ public class ScoreResponse {
 	@Path("")
 	@POST
 	public Response add(String body, @Context UriInfo uriInfo) throws SQLException {	
+		// Build new object
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
 	    Score score = gson.fromJson(body, Score.class);
-		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 
-	    
-	    //Check if all mandatory fields are included
-	    if (score.Amount != null && score.ScoreType != null) {
-			String query = "INSERT INTO Score (ItemId, UserId, ScoreTypeId, Amount) "
-					+ "VALUES (" + score.ItemId + ""
-					+ ", (SELECT UserId FROM User WHERE WP_UserId = " + score.UserId + ")"
-					+ ", ("
-					+	"SELECT ScoreTypeId FROM ScoreType WHERE Name = '" + score.ScoreType + "'"
-					+ ")"
-					+ ", " + score.Amount + ")";
-			String resource = executeQuery(query, "Insert");
-			ResponseBuilder rBuild = Response.ok(resource);
+		String query = "INSERT INTO Score (ItemId, UserId, ScoreTypeId, Amount) "
+						+ "VALUES (" 
+							+ score.ItemId + ""
+							+ ", (SELECT UserId FROM User WHERE WP_UserId = " + score.UserId + ")"
+							+ ", ("
+							+	"SELECT ScoreTypeId FROM ScoreType WHERE Name = '" + score.ScoreType + "'"
+							+ ")"
+							+ ", " + score.Amount 
+						+ ")";
+		
+		String result = executeQuery(query, "Insert");
+		// Check if insert was successful
+		if (result != "") {
+			ResponseBuilder rBuild = Response.ok(result);
 	        return rBuild.build();
-	    } else {
+		}
+		else {
 			ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
 	        return rBuild.build();
-	    }
+		}
 	}
 	
 
 	//Edit entry by id
 	@Path("/{id}")
 	@POST
-	public String update(@PathParam("id") int id, String body) throws SQLException {
+	public Response update(@PathParam("id") int id, String body) throws SQLException {
+		// Build new object
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
 	    JsonObject  changes = gson.fromJson(body, JsonObject.class);
 	    
-	    //Check if field is allowed to be changed
-	    if (changes.get("ScoreId") != null) {
-	    	return "Prohibited change attempt";
-	    }
-	    
-	    //Check if NOT NULL field is attempted to be changed to NULL
-	    if ((changes.get("Amount") == null || !changes.get("Amount").isJsonNull())
-	    		&& (changes.get("ScoreTypeId") == null || !changes.get("ScoreTypeId").isJsonNull())) {
-		    String query = "UPDATE Score SET ";
-		    
-		    int keyCount = changes.entrySet().size();
-		    int i = 1;
-			for(Map.Entry<String, JsonElement> entry : changes.entrySet()) {
-			    query += entry.getKey() + " = " + entry.getValue();
-			    if (i < keyCount) {
-			    	query += ", ";
-			    }
-			    i++;
-			}
-			query += " WHERE ScoreId = " + id;
-			String resource = executeQuery(query, "Update");
-			return resource;
-	    } else {
-	    	return "Prohibited change to null";
-	    }
+	    String query = "UPDATE Score SET ";
+	    int keyCount = changes.entrySet().size();
+	    int i = 1;
+		for(Map.Entry<String, JsonElement> entry : changes.entrySet()) {
+		    query += entry.getKey() + " = " + entry.getValue();
+		    if (i < keyCount) {
+		    	query += ", ";
+		    }
+		    i++;
+		}
+		query += " WHERE ScoreId = " + id;
+		String result = executeQuery(query, "Update");
+		if (result != "") {
+			ResponseBuilder rBuild = Response.ok(result);
+	        return rBuild.build();
+		}
+		else {
+			ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
+	        return rBuild.build();
+		}
 	}
 	
 
 	//Delete entry by id
 	@Path("/{id}")
 	@DELETE
-	public String delete(@PathParam("id") int id) throws SQLException {
-		String resource = executeQuery("DELETE FROM Score WHERE ScoreId = " + id, "Delete");
-		return resource;
+	public Response delete(@PathParam("id") int id) throws SQLException {
+		String result = executeQuery("DELETE FROM Score WHERE ScoreId = " + id, "Delete");
+		ResponseBuilder rBuild = Response.ok(result);
+        return rBuild.build();
 	}
 	
 
@@ -233,22 +251,25 @@ public class ScoreResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response getEntry(@PathParam("id") int id) throws SQLException {
-		String query = "SELECT * FROM (" +
-				"SELECT \r\n" + 
-				"	s.ScoreId as ScoreId,\r\n" + 
-				"	s.Amount as Amount,\r\n" + 
-				"   s.ItemId as ItemId,\r\n" + 
-				"   s.UserId as UserId,\r\n" + 
-				"	st.ScoreTypeId as ScoreTypeId,\r\n" + 
-				"    st.Name as ScoreType,\r\n" + 
-				"    st.Rate as Rate,\r\n" + 
-				"    s.Timestamp as Timestamp\r\n" + 
-				"FROM Score s\r\n" + 
-				"JOIN ScoreType st\r\n" + 
-				"ON s.ScoreTypeId = st.ScoreTypeId) a\r\n" + 
+		String query = "SELECT * FROM " +
+				"(" +
+					"SELECT " + 
+					"	s.ScoreId as ScoreId," + 
+					"	s.Amount as Amount," + 
+					"   s.ItemId as ItemId," + 
+					"   s.UserId as UserId," + 
+					"	st.ScoreTypeId as ScoreTypeId," + 
+					"    st.Name as ScoreType," + 
+					"    st.Rate as Rate," + 
+					"    s.Timestamp as Timestamp " + 
+					"FROM Score s " + 
+					"JOIN ScoreType st " + 
+					"ON s.ScoreTypeId = st.ScoreTypeId" +
+				") a " + 
 				"WHERE ScoreId = " + id;
-		String resource = executeQuery(query, "Select");
-		ResponseBuilder rBuild = Response.ok(resource);
+		String result = executeQuery(query, "Select");
+		
+		ResponseBuilder rBuild = Response.ok(result);
         return rBuild.build();
 	}
 
