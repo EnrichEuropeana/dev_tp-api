@@ -3,6 +3,7 @@ package responses;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -18,6 +19,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -25,6 +28,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
@@ -47,7 +52,6 @@ import objects.Story;
 
 @Path("/projects")
 public class ProjectResponse {
-
 
 	public String executeQuery(String query, String type) throws SQLException{
 		   List<Project> projectList = new ArrayList<Project>();
@@ -416,6 +420,11 @@ public class ProjectResponse {
 	@Path("/{project_id}/stories")
 	@POST
 	public Response insertStory(@PathParam("project_id") int projectId, @Context UriInfo uriInfo, String body, @Context HttpHeaders headers) throws Exception {
+	     
+	    FileWriter fileWriter = new FileWriter("request.txt");
+	    fileWriter.write(body);
+	    fileWriter.close();
+	    
 		boolean auth = false;
 		String authorizationToken = "";
 		if (headers.getRequestHeader(HttpHeaders.AUTHORIZATION) != null) {
