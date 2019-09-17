@@ -19,8 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -28,8 +26,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
@@ -37,6 +33,20 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.commons.io.IOUtils;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -49,13 +59,15 @@ import objects.ApiKey;
 import objects.Dataset;
 import objects.Project;
 import objects.Story;
+import sun.misc.BASE64Encoder;
 
 @Path("/projects")
 public class ProjectResponse {
 
+
 	public String executeQuery(String query, String type) throws SQLException{
 		   List<Project> projectList = new ArrayList<Project>();
-	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
 
@@ -67,13 +79,13 @@ public class ProjectResponse {
 	            final String USER = prop.getProperty("USER");
 	            final String PASS = prop.getProperty("PASS");
 		   // Register JDBC driver
-				Class.forName("com.mysql.jdbc.Driver");
-				
-				   // Open a connection
-				   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
-				   // Execute SQL query
-				   Statement stmt = conn.createStatement();
 		   try {
+			Class.forName("com.mysql.jdbc.Driver");
+		
+		   // Open a connection
+		   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		   // Execute SQL query
+		   Statement stmt = conn.createStatement();
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
 			   if (success > 0) {
@@ -101,16 +113,12 @@ public class ProjectResponse {
 		   } catch(SQLException se) {
 		       //Handle errors for JDBC
 			   se.printStackTrace();
-		   } finally {
-			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
-			    try { conn.close(); } catch (Exception e) { /* ignored */ }
-		   }
+		   } catch (ClassNotFoundException e) {
+			   e.printStackTrace();
+		}
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
-				e1.printStackTrace();
-			} catch (ClassNotFoundException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 	    Gson gsonBuilder = new GsonBuilder().create();
@@ -121,7 +129,7 @@ public class ProjectResponse {
 	public String getApiKeys() throws SQLException{
 			String query = "SELECT * FROM ApiKey";
 		   List<ApiKey> apiKeys = new ArrayList<ApiKey>();
-	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
 
@@ -175,7 +183,7 @@ public class ProjectResponse {
 	
 	public String executeDatasetQuery(String query, String type) throws SQLException{
 	    List<Dataset> datasetList = new ArrayList<Dataset>();
-		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
 
@@ -198,13 +206,9 @@ public class ProjectResponse {
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
 			   if (success > 0) {
-				   stmt.close();
-				   conn.close();
 				   return type +" succesful";
 			   }
 			   else {
-				   stmt.close();
-				   conn.close();
 				   return type +" could not be executed";
 			   }
 		   }
@@ -363,8 +367,8 @@ public class ProjectResponse {
 	}
 	
 
-	public String executeInsertQuery(String query, String type) throws SQLException{
-		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+	public String executeInsertQuery(String query, String type) throws SQLException, ClientProtocolException, IOException{
+		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
 
@@ -375,6 +379,30 @@ public class ProjectResponse {
             final String DB_URL = prop.getProperty("DB_URL");
             final String USER = prop.getProperty("USER");
             final String PASS = prop.getProperty("PASS");
+            
+    		HttpClient httpclient = HttpClients.createDefault();
+    		
+            HttpPost httppost = new HttpPost("https://keycloak-server-test.eanadev.org/auth/realms/DataExchangeInfrastructure/protocol/openid-connect/token");
+    	
+    	        List<NameValuePair> params = new ArrayList<NameValuePair>(2);
+    	        params.add(new BasicNameValuePair("grant_type", "client_credentials"));
+    	        params.add(new BasicNameValuePair("client_secret", prop.getProperty("SECRET_KEY")));
+    	        params.add(new BasicNameValuePair("client_id", "tp-api-client"));
+    	        httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
+    	        HttpResponse response = httpclient.execute(httppost);
+    	        HttpEntity entity = response.getEntity();
+    	
+    	        if (entity != null) {
+    	            try (InputStream instream = entity.getContent()) {
+    	                StringWriter writer = new StringWriter();
+    	                IOUtils.copy(instream, writer, StandardCharsets.UTF_8);
+    	                JsonObject data = new JsonParser().parse(writer.toString()).getAsJsonObject();
+
+    	    	        //String authHeader = data.get("access_token").toString();
+    	    	        //httppost2.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
+    	            }
+    	        }
+        
 		
 	   // Register JDBC driver
 	   try {
@@ -386,20 +414,25 @@ public class ProjectResponse {
 		   Statement stmt = conn.createStatement();
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
+			   /*
+				if (1==1) {
+					return query;
+				}
+				*/
 			   if (success > 0) {
-				   stmt.close();
 				   conn.close();
+				   stmt.close();
 				   return type +" succesful";
 			   }
 			   else {
-				   stmt.close();
 				   conn.close();
+				   stmt.close();
 				   return "Failed";
 			   }
 		   }
 		   else {
-			   stmt.close();
 			   conn.close();
+			   stmt.close();
 			   return "test2";
 		   }
 	   } catch(SQLException se) {
@@ -413,18 +446,18 @@ public class ProjectResponse {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-	   return "query couldn't be executed";
+	   //return "query couldn't be executed";
+		return query;
 	}
 	
 	//Get entry by id
 	@Path("/{project_id}/stories")
 	@POST
 	public Response insertStory(@PathParam("project_id") int projectId, @Context UriInfo uriInfo, String body, @Context HttpHeaders headers) throws Exception {
-	     
-	    FileWriter fileWriter = new FileWriter("request.txt");
+
+	    FileWriter fileWriter = new FileWriter("request2.txt");
 	    fileWriter.write("test");
 	    fileWriter.close();
-	    
 		boolean auth = false;
 		String authorizationToken = "";
 		if (headers.getRequestHeader(HttpHeaders.AUTHORIZATION) != null) {
@@ -481,6 +514,10 @@ public class ProjectResponse {
 		String storyTitle = "";
 		String recordId = "";
 		String imageLink = "";
+		
+		if (data.getAsJsonObject().has("iiif_url")) {
+			manifestUrl = data.getAsJsonObject().get("iiif_url").getAsString();
+		}
 
 		for (int i = 0; i < keyCount; i++) {
 			for(Map.Entry<String, JsonElement> entry : dataArray.get(i).getAsJsonObject().entrySet()) {
@@ -592,7 +629,7 @@ public class ProjectResponse {
 									if (manifestUrl == "") {
 										manifestUrl = dataArray.get(i).getAsJsonObject().get("dcterms:isReferencedBy").getAsJsonObject().get("@id").getAsString();
 									}
-									manifestUrl = dataArray.get(i).getAsJsonObject().get("dcterms:isReferencedBy").getAsJsonObject().get("@id").getAsString();
+									//manifestUrl = dataArray.get(i).getAsJsonObject().get("dcterms:isReferencedBy").getAsJsonObject().get("@id").getAsString();
 								}
 							}
 							else {
@@ -644,7 +681,7 @@ public class ProjectResponse {
 			ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
 	        return rBuild.build();
 		}
-		
+
 		String itemQuery = "";
 		if (manifestUrl == "") {
 			itemQuery = "";
@@ -668,74 +705,100 @@ public class ProjectResponse {
 			}
 		}
 		else {
-			URL url = new URL(manifestUrl);
-			HttpURLConnection con = (HttpURLConnection) url.openConnection();
-			String redirect = con.getHeaderField("Location");
-		    try {
-				URL url2 = new URL(con.getURL().toString());	
-				if (redirect != null){
-					con = (HttpURLConnection) new URL(redirect).openConnection();
-					url2 = new URL(redirect);		
-				}
-				else {
-					con = (HttpURLConnection) new URL(con.getURL().toString()).openConnection();
-				}
-				con.setRequestMethod("GET");
-				con.setRequestProperty("Content-Type", "application/json");
-				BufferedReader in = new BufferedReader(
-				  new InputStreamReader(url2.openStream(), "UTF-8"));
-				String inputLine;
-				StringBuffer content = new StringBuffer();
-				while ((inputLine = in.readLine()) != null) {
-				    content.append(inputLine);
-				}
-				in.close();
-				con.disconnect();
-			
-				//String json = readUrl(manifestUrl);
-				JsonObject manifest = (JsonObject) new JsonParser().parse(content.toString());
-				
-				JsonArray imageArray = manifest.get("sequences").getAsJsonArray().get(0).getAsJsonObject().get("canvases").getAsJsonArray();
-				int imageCount = imageArray.size();
+			try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
 
-				itemQuery = "INSERT INTO Item ("
-						+ "Title, "
-						+ "StoryId, "
-						+ "ImageLink, "
-						+ "OrderIndex, "
-						+ "Manifest"
-						+ ") VALUES ";
-				for (int i = 0; i < imageCount; i++) {
-					imageLink = imageArray.get(i).getAsJsonObject().get("images").getAsJsonArray().get(0).getAsJsonObject().get("resource").getAsJsonObject().toString();
-					
-					if (i == 0) {
-						itemQuery += "("
-						+ "\"" + storyTitle.replace("\"", "") + " Item "  + (i + 1) + "\"" +  ", "
-						+ "(SELECT StoryId FROM Story ORDER BY StoryId DESC LIMIT 1), "
-						+ "\"" + imageLink.replace("\"", "\\\"") + "\"" + ", "
-						+ (i + 1) + ", "
-						+ "\"" + manifestUrl + "\"" + ")";
-					}
-					else {
-						itemQuery += ", ("
-								+ "\"" + storyTitle.replace("\"", "") + " Item "  + (i + 1) + "\"" +  ", "
-								+ "(SELECT StoryId FROM Story ORDER BY StoryId DESC LIMIT 1), "
-								+ "\"" + imageLink.replace("\"", "\\\"") + "\"" + ", "
-								+ (i + 1) + ", "
-								+ "\"" + manifestUrl + "\"" + ")";
-					}
-				}
-				String itemResponse = executeInsertQuery(itemQuery, "Import");
-				if (itemResponse == "Failed") {
-					ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
-			        return rBuild.build();
-				}
-		    } catch (IOException e) {
-		        throw new RuntimeException(e);
-		    }
+	            Properties prop = new Properties();
+
+	            // load a properties file
+	            prop.load(input);
+
+	            // get the property value and print it out
+	            final String DB_URL = prop.getProperty("DB_URL");
+	            final String USER = prop.getProperty("USER");
+	            final String PASS = prop.getProperty("PASS");
+	            
+	    		HttpClient httpclient = HttpClients.createDefault();
+	    		
+	            HttpPost httppost = new HttpPost("https://keycloak-server-test.eanadev.org/auth/realms/DataExchangeInfrastructure/protocol/openid-connect/token");
+    	
+    	        List<NameValuePair> params = new ArrayList<NameValuePair>(2);
+    	        params.add(new BasicNameValuePair("grant_type", "client_credentials"));
+    	        params.add(new BasicNameValuePair("client_secret", prop.getProperty("SECRET_KEY")));
+    	        params.add(new BasicNameValuePair("client_id", "tp-api-client"));
+    	        httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
+    	        HttpResponse response = httpclient.execute(httppost);
+    	        HttpEntity entity = response.getEntity();
+
+    	        if (entity != null) {
+    	            try (InputStream instream = entity.getContent()) {
+    	                StringWriter writer = new StringWriter();
+    	                IOUtils.copy(instream, writer, StandardCharsets.UTF_8);
+    	                JsonObject authData = new JsonParser().parse(writer.toString()).getAsJsonObject();
+
+    	    	        String authHeader = authData.get("access_token").toString();
+    	    	        //httppost2.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
+
+        	            URL url = new URL(manifestUrl);
+        				HttpURLConnection con = (HttpURLConnection) url.openConnection();
+						
+						con.setRequestMethod("GET");
+						con.setRequestProperty("Content-Type", "application/json");
+					    con.setRequestProperty("Authorization", "Bearer " + authHeader.replace("\"", "") );
+
+						BufferedReader in = new BufferedReader(
+						  new InputStreamReader(con.getInputStream(), "UTF-8"));
+						String inputLine;
+						StringBuffer content = new StringBuffer();
+						while ((inputLine = in.readLine()) != null) {
+						    content.append(inputLine);
+						}
+						in.close();
+						con.disconnect();
+						
+    					JsonObject manifest = new JsonParser().parse(content.toString()).getAsJsonObject();
+    					
+    					JsonArray imageArray = manifest.get("sequences").getAsJsonArray().get(0).getAsJsonObject().get("canvases").getAsJsonArray();
+    					int imageCount = imageArray.size();
+    	
+    					itemQuery = "INSERT INTO Item ("
+    							+ "Title, "
+    							+ "StoryId, "
+    							+ "ImageLink, "
+    							+ "OrderIndex, "
+    							+ "Manifest"
+    							+ ") VALUES ";
+    					for (int i = 0; i < imageCount; i++) {
+    						imageLink = imageArray.get(i).getAsJsonObject().get("images").getAsJsonArray().get(0).getAsJsonObject().get("resource").getAsJsonObject().toString();
+
+    						if (i == 0) {
+    							itemQuery += "("
+    							+ "\"" + storyTitle.replace("\"", "") + " Item "  + (i + 1) + "\"" +  ", "
+    							+ "(SELECT StoryId FROM Story ORDER BY StoryId DESC LIMIT 1), "
+    							+ "\"" + imageLink.replace("\"", "\\\"") + "\"" + ", "
+    							+ (i + 1) + ", "
+    							+ "\"" + manifestUrl + "\"" + ")";
+    						}
+    						else {
+    							itemQuery += ", ("
+    									+ "\"" + storyTitle.replace("\"", "") + " Item "  + (i + 1) + "\"" +  ", "
+    									+ "(SELECT StoryId FROM Story ORDER BY StoryId DESC LIMIT 1), "
+    									+ "\"" + imageLink.replace("\"", "\\\"") + "\"" + ", "
+    									+ (i + 1) + ", "
+    									+ "\"" + manifestUrl + "\"" + ")";
+    						}
+    					}
+    					String itemResponse = executeInsertQuery(itemQuery, "Import");
+    					
+    					
+    					if (itemResponse == "Failed") {
+    						ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
+    				        return rBuild.build();
+    					}
+    	            }
+    	        }
+			}
 		}
-		
-		
+
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();
 	}
