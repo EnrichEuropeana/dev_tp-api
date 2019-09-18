@@ -121,6 +121,7 @@ public class LanguageResponse {
 		    }
 		    query += ")";
 		}
+		query += " ORDER BY Name ASC ";
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();

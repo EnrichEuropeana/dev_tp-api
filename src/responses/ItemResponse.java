@@ -99,14 +99,14 @@ public class ItemResponse {
 				  // Add Properties
 				  List<Property> PropertyList = new ArrayList<Property>();
 				  if (rs.getString("PropertyId") != null) {
-					  String[] PropertyIds = rs.getString("PropertyId").split("&~&");
-					  String[] PropertyValues = rs.getString("PropertyValue").split("&~&");
+					  String[] PropertyIds = rs.getString("PropertyId").split("&~&", -1);
+					  String[] PropertyValues = rs.getString("PropertyValue").split("&~&", -1);
 					  String[] PropertyDescriptions = new String[PropertyIds.length];
 					  if (rs.getString("PropertyDescription") != null) {
-						  PropertyDescriptions = rs.getString("PropertyDescription").split("&~&");
+						  PropertyDescriptions = rs.getString("PropertyDescription").split("&~&", -1);
 					  }
-					  String[] PropertyTypeNames = rs.getString("PropertyTypeName").split("&~&");
-					  String[] PropertyEditables = rs.getString("PropertyEditable").split("&~&");
+					  String[] PropertyTypeNames = rs.getString("PropertyTypeName").split("&~&", -1);
+					  String[] PropertyEditables = rs.getString("PropertyEditable").split("&~&", -1);
 					  for (int i = 0; i < PropertyIds.length; i++) {
 						  Property property = new Property();
 						  property.setPropertyId(Integer.parseInt(PropertyIds[i]));
@@ -123,15 +123,15 @@ public class ItemResponse {
 				  //Add Places
 				  List<Place> PlaceList = new ArrayList<Place>();
 				  if (rs.getString("PlaceId") != null) {
-					  String[] PlaceIds = rs.getString("PlaceId").split("&~&");
-					  String[] PlaceNames = rs.getString("PlaceName").split("&~&");
-					  String[] PlaceLatitudes = rs.getString("PlaceLatitude").split("&~&");
-					  String[] PlaceLongitudes = rs.getString("PlaceLongitude").split("&~&");
+					  String[] PlaceIds = rs.getString("PlaceId").split("&~&", -1);
+					  String[] PlaceNames = rs.getString("PlaceName").split("&~&", -1);
+					  String[] PlaceLatitudes = rs.getString("PlaceLatitude").split("&~&", -1);
+					  String[] PlaceLongitudes = rs.getString("PlaceLongitude").split("&~&", -1);
 					  String[] PlaceLink = rs.getString("PlaceLink").split("&~&", -1);
-					  String[] PlaceZoom = rs.getString("PlaceZoom").split("&~&");
+					  String[] PlaceZoom = rs.getString("PlaceZoom").split("&~&", -1);
 					  String[] PlaceComment = rs.getString("PlaceComment").split("&~&", -1);
-					  String[] PlaceUserId = rs.getString("PlaceUserId").split("&~&");
-					  String[] PlaceUserGenerated = rs.getString("PlaceUserGenerated").split("&~&");
+					  String[] PlaceUserId = rs.getString("PlaceUserId").split("&~&", -1);
+					  String[] PlaceUserGenerated = rs.getString("PlaceUserGenerated").split("&~&", -1);
 					  for (int i = 0; i < PlaceIds.length; i++) {
 						  Place place = new Place();
 						  place.setPlaceId(Integer.parseInt(PlaceIds[i]));
@@ -150,17 +150,17 @@ public class ItemResponse {
 				  //Add Transcriptions
 				  List<Transcription> TranscriptionList = new ArrayList<Transcription>();
 				  if (rs.getString("TranscriptionId") != null) {				  
-					  String[] TranscriptionIds = rs.getString("TranscriptionId").split("&~&");
-					  String[] TranscriptionTexts = rs.getString("TranscriptionText").split("&~&");
-					  String[] TranscriptionTextNoTags = rs.getString("TranscriptionTextNoTags").split("&~&");
-					  String[] TranscriptionUserIds = rs.getString("TranscriptionUserId").split("&~&");
-					  String[] TranscriptionCurrentVersions = rs.getString("TranscriptionCurrentVersion").split("&~&");
-					  String[] TranscriptionTimestamps = rs.getString("TranscriptionTimestamp").split("&~&");
-					  String[] TranscriptionWP_UserIds = rs.getString("TranscriptionWP_UserId").split("&~&");
+					  String[] TranscriptionIds = rs.getString("TranscriptionId").split("&~&", -1);
+					  String[] TranscriptionTexts = rs.getString("TranscriptionText").split("&~&", -1);
+					  String[] TranscriptionTextNoTags = rs.getString("TranscriptionTextNoTags").split("&~&", -1);
+					  String[] TranscriptionUserIds = rs.getString("TranscriptionUserId").split("&~&", -1);
+					  String[] TranscriptionCurrentVersions = rs.getString("TranscriptionCurrentVersion").split("&~&", -1);
+					  String[] TranscriptionTimestamps = rs.getString("TranscriptionTimestamp").split("&~&", -1);
+					  String[] TranscriptionWP_UserIds = rs.getString("TranscriptionWP_UserId").split("&~&", -1);
 					  String[] TranscriptionEuropeanaAnnotationIds = new String[TranscriptionIds.length];
-					  String[] TranscriptionNoTexts = rs.getString("TranscriptionNoText").split("&~&");
+					  String[] TranscriptionNoTexts = rs.getString("TranscriptionNoText").split("&~&", -1);
 					  if (rs.getString("TranscriptionEuropeanaAnnotationId") != null) {
-						  TranscriptionEuropeanaAnnotationIds = rs.getString("TranscriptionEuropeanaAnnotationId").split("&~&");
+						  TranscriptionEuropeanaAnnotationIds = rs.getString("TranscriptionEuropeanaAnnotationId").split("&~&", -1);
 					  }
 					  
 					  String[] LanguageIdList = new String[TranscriptionIds.length];
@@ -169,19 +169,19 @@ public class ItemResponse {
 					  String[] LanguageShortNameList = new String[TranscriptionIds.length];
 					  String[] LanguageCodeList = new String[TranscriptionIds.length];
 					  if (rs.getString("TranscriptionLanguageId") != null) {
-						  LanguageIdList = rs.getString("TranscriptionLanguageId").split("&~&");
+						  LanguageIdList = rs.getString("TranscriptionLanguageId").split("&~&", -1);
 					  }
 					  if (rs.getString("TranscriptionLanguageName") != null) {
-						  LanguageNameList = rs.getString("TranscriptionLanguageName").split("&~&");
+						  LanguageNameList = rs.getString("TranscriptionLanguageName").split("&~&", -1);
 					  }
 					  if (rs.getString("TranscriptionLanguageNameEnglish") != null) {
-						  LanguageNameEnglishList = rs.getString("TranscriptionLanguageNameEnglish").split("&~&");
+						  LanguageNameEnglishList = rs.getString("TranscriptionLanguageNameEnglish").split("&~&", -1);
 					  }
 					  if (rs.getString("TranscriptionLanguageShortName") != null) {
-						  LanguageShortNameList = rs.getString("TranscriptionLanguageShortName").split("&~&");
+						  LanguageShortNameList = rs.getString("TranscriptionLanguageShortName").split("&~&", -1);
 					  }
 					  if (rs.getString("TranscriptionLanguageCode") != null) {
-						  LanguageCodeList = rs.getString("TranscriptionLanguageCode").split("&~&");
+						  LanguageCodeList = rs.getString("TranscriptionLanguageCode").split("&~&", -1);
 					  }
 					  
 					  for (int i = 0; i < TranscriptionIds.length; i++) {
@@ -201,11 +201,11 @@ public class ItemResponse {
 						  List<Language> LanguageList = new ArrayList<Language>();
 						  if (rs.getString("TranscriptionLanguageId") != null) {
 							  // Intitialize lists grouped by items
-							  String[] LanguageIds = LanguageIdList[i].split("�~�");
-							  String[] LanguageNames = LanguageNameList[i].split("�~�");
-							  String[] LanguageNameEnglishs = LanguageNameEnglishList[i].split("�~�");
-							  String[] LanguageShortNames = LanguageShortNameList[i].split("�~�");
-							  String[] LanguageCodes = LanguageCodeList[i].split("�~�");
+							  String[] LanguageIds = LanguageIdList[i].split("&~&", -1);
+							  String[] LanguageNames = LanguageNameList[i].split("&~&", -1);
+							  String[] LanguageNameEnglishs = LanguageNameEnglishList[i].split("&~&", -1);
+							  String[] LanguageShortNames = LanguageShortNameList[i].split("&~&", -1);
+							  String[] LanguageCodes = LanguageCodeList[i].split("&~&", -1);
 							  for (int j = 0; j < LanguageIds.length; j++) {
 								  if (!isNumeric(LanguageIds[j])) {
 									  continue;
@@ -228,14 +228,14 @@ public class ItemResponse {
 				  //Add Annotations
 				  List<Annotation> AnnotationList = new ArrayList<Annotation>();
 				  if (rs.getString("AnnotationId") != null) {
-					  String[] AnnotationIds = rs.getString("AnnotationId").split("&~&");
-					  String[] AnnotationTexts = rs.getString("AnnotationText").split("&~&");
-					  String[] AnnotationUserIds = rs.getString("AnnotationUserId").split("&~&");
+					  String[] AnnotationIds = rs.getString("AnnotationId").split("&~&", -1);
+					  String[] AnnotationTexts = rs.getString("AnnotationText").split("&~&", -1);
+					  String[] AnnotationUserIds = rs.getString("AnnotationUserId").split("&~&", -1);
 					  String[] AnnotationX_Coords = rs.getString("AnnotationX_Coord").split(",", -1);
 					  String[] AnnotationY_Coords = rs.getString("AnnotationY_Coord").split(",", -1);
 					  String[] AnnotationWidths = rs.getString("AnnotationWidth").split(",", -1);
 					  String[] AnnotationHeights = rs.getString("AnnotationHeight").split(",", -1);
-					  String[] AnnotationTypes = rs.getString("AnnotationType").split("&~&");
+					  String[] AnnotationTypes = rs.getString("AnnotationType").split("&~&", -1);
 					  for (int i = 0; i < AnnotationIds.length; i++) {
 						  Annotation annotation = new Annotation();
 						  annotation.setAnnotationId(Integer.parseInt(AnnotationIds[i]));
@@ -254,10 +254,10 @@ public class ItemResponse {
 				  //Add Comments
 				  List<Comment> CommentList = new ArrayList<Comment>();
 				  if (rs.getString("CommentId") != null) {
-					  String[] CommentIds = rs.getString("CommentId").split("&~&");
-					  String[] CommentTexts = rs.getString("CommentText").split("&~&");
-					  String[] CommentUserIds = rs.getString("CommentUserId").split("&~&");
-					  String[] CommentTimestamps = rs.getString("CommentTimestamp").split("&~&");
+					  String[] CommentIds = rs.getString("CommentId").split("&~&", -1);
+					  String[] CommentTexts = rs.getString("CommentText").split("&~&", -1);
+					  String[] CommentUserIds = rs.getString("CommentUserId").split("&~&", -1);
+					  String[] CommentTimestamps = rs.getString("CommentTimestamp").split("&~&", -1);
 					  for (int i = 0; i < CommentIds.length; i++) {
 						  Comment comment = new Comment();
 						  comment.setCommentId(Integer.parseInt(CommentIds[i]));
@@ -282,38 +282,38 @@ public class ItemResponse {
 				  //Add Persons
 				  List<Person> PersonList = new ArrayList<Person>();
 				  if (rs.getString("PersonId") != null) {
-					  String[] PersonIds = rs.getString("PersonId").split("&~&");
+					  String[] PersonIds = rs.getString("PersonId").split("&~&", -1);
 					  String[] PersonFirstNames = new String[PersonIds.length];
 					  if (rs.getString("PersonFirstName") != null) {
-						  PersonFirstNames = rs.getString("PersonFirstName").split("&~&");
+						  PersonFirstNames = rs.getString("PersonFirstName").split("&~&", -1);
 					  }
 					  String[] PersonLastNames = new String[PersonIds.length];
 					  if (rs.getString("PersonLastName") != null) {
-						  PersonLastNames = rs.getString("PersonLastName").split("&~&");
+						  PersonLastNames = rs.getString("PersonLastName").split("&~&", -1);
 					  }
 					  String[] PersonBirthPlaces = new String[PersonIds.length];
 					  if (rs.getString("PersonBirthPlace") != null) {
-						  PersonBirthPlaces = rs.getString("PersonBirthPlace").split("&~&");
+						  PersonBirthPlaces = rs.getString("PersonBirthPlace").split("&~&", -1);
 					  }
 					  String[] PersonBirthDates = new String[PersonIds.length];
 					  if (rs.getString("PersonBirthDate") != null) {
-						  PersonBirthDates = rs.getString("PersonBirthDate").split("&~&");
+						  PersonBirthDates = rs.getString("PersonBirthDate").split("&~&", -1);
 					  }
 					  String[] PersonDeathPlaces = new String[PersonIds.length];
 					  if (rs.getString("PersonDeathPlace") != null) {
-						  PersonDeathPlaces = rs.getString("PersonDeathPlace").split("&~&");
+						  PersonDeathPlaces = rs.getString("PersonDeathPlace").split("&~&", -1);
 					  }
 					  String[] PersonDeathDates = new String[PersonIds.length];
 					  if (rs.getString("PersonDeathDate") != null) {
-						  PersonDeathDates = rs.getString("PersonDeathDate").split("&~&");
+						  PersonDeathDates = rs.getString("PersonDeathDate").split("&~&", -1);
 					  }
 					  String[] PersonLinks = new String[PersonIds.length];
 					  if (rs.getString("PersonLink") != null) {
-						  PersonLinks = rs.getString("PersonLink").split("&~&");
+						  PersonLinks = rs.getString("PersonLink").split("&~&", -1);
 					  }
 					  String[] PersonDescriptions = new String[PersonIds.length];
 					  if (rs.getString("PersonDescription") != null) {
-						  PersonDescriptions = rs.getString("PersonDescription").split("&~&");
+						  PersonDescriptions = rs.getString("PersonDescription").split("&~&", -1);
 					  }
 					  for (int i = 0; i < PersonIds.length; i++) {
 						  Person person = new Person();
@@ -780,7 +780,7 @@ public class ItemResponse {
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		
 		for(String key : queryParams.keySet()){
-			String[] values = queryParams.getFirst(key).split("&~&");
+			String[] values = queryParams.getFirst(key).split(",");
 			query += " AND (";
 		    int valueCount = values.length;
 		    int i = 1;

@@ -72,7 +72,6 @@ public class TranscriptionProfileResponse {
 			  transcriptionProfile.setWP_UserId(rs.getInt("WP_UserId"));
 			  transcriptionProfile.setItemId(rs.getInt("ItemId"));
 			  transcriptionProfile.setAmount(rs.getInt("Amount"));
-			  transcriptionProfile.setItemImageLink(rs.getString("ItemImageLink"));
 			  transcriptionProfile.setItemTitle(rs.getString("ItemTitle"));
 			  transcriptionProfile.setCompletionStatus(rs.getString("CompletionStatus"));
 			  transcriptionProfile.setScoreType(rs.getString("ScoreType"));
@@ -109,26 +108,52 @@ public class TranscriptionProfileResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
+		/*
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		
+		String query = "SELECT \r\n" + 
+				"	s.ItemId as ItemId,\r\n" + 
+				"	i.Title AS ItemTitle,\r\n" + 
+				"	c.Name AS CompletionStatus\r\n" + 
+				"FROM\r\n" + 
+				"(\r\n" + 
+				"SELECT \r\n" + 
+				"	DISTINCT(s.ItemId) as ItemId\r\n" + 
+				"    FROM\r\n" + 
+				"        Score s\r\n" + 
+				"    LEFT JOIN User u ON s.UserId = u.UserId\r\n";
+		if (queryParams.containsKey("WP_UserId")) {
+			query +=  " WHERE s.UserId = "
+						+ "(SELECT UserId FROM User WHERE WP_UserId = " + queryParams.getFirst("WP_UserId") + ") ";
+		}
+		query += ") s\r\n" + 
+				"LEFT JOIN Item i ON s.ItemId = i.ItemId\r\n" + 
+				"LEFT JOIN CompletionStatus c ON i.CompletionStatusId = c.CompletionStatusId";
+
+		String resource = executeQuery(query, "Select");
+		ResponseBuilder rBuild = Response.ok(resource);
+		//ResponseBuilder rBuild = Response.ok(query);
+        return rBuild.build();*/
 		String query = "SELECT  " + 
-						"    * " + 
-						"FROM " + 
-						"    (SELECT  " + 
-						"			st.Name as ScoreType, " + 
-						"            s.Amount, " + 
-						"            s.Timestamp, " + 
-						"            s.UserId, " + 
-						"            s.ItemId, " + 
-						"            u.WP_UserId, " + 
-						"            i.ImageLink AS ItemImageLink, " + 
-						"            i.Title AS ItemTitle, " + 
-						"            c.Name AS CompletionStatus " + 
-						"    FROM " + 
-						"        Score s " + 
-						"    JOIN ScoreType st ON s.ScoreTypeId = st.ScoreTypeId " + 
-						"    JOIN User u ON s.UserId = u.UserId " + 
-						"    JOIN Item i ON s.ItemId = i.ItemId " + 
-						"    JOIN CompletionStatus c ON i.CompletionStatusId = c.CompletionStatusId) a " + 
-						"WHERE 1";
+				"    * " + 
+				"FROM " + 
+				"    (SELECT  " + 
+				"			st.Name as ScoreType, " + 
+				"            s.Amount, " + 
+				"            s.Timestamp, " + 
+				"            s.UserId, " + 
+				"            s.ItemId, " + 
+				"            u.WP_UserId, " + 
+				"            i.ImageLink AS ItemImageLink, " + 
+				"            i.Title AS ItemTitle, " + 
+				"            c.Name AS CompletionStatus " + 
+				"    FROM " + 
+				"        Score s " + 
+				"    JOIN ScoreType st ON s.ScoreTypeId = st.ScoreTypeId " + 
+				"    JOIN User u ON s.UserId = u.UserId " + 
+				"    JOIN Item i ON s.ItemId = i.ItemId " + 
+				"    JOIN CompletionStatus c ON i.CompletionStatusId = c.CompletionStatusId) a " + 
+				"WHERE 1";
 
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		
@@ -148,6 +173,6 @@ public class TranscriptionProfileResponse {
 		}
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
-        return rBuild.build();
+		return rBuild.build();
 	}
 }

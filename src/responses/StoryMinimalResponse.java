@@ -185,7 +185,7 @@ public class StoryMinimalResponse {
 				"		ItemId,\r\n" + 
 				"        ImageLink\r\n" + 
 				"	FROM Item i\r\n";
-		if (queryParams.containsKey("storyId")) {
+		if (queryParams.containsKey("storyId") && queryParams.getFirst("storyId") != "") {
 			String[] values = queryParams.getFirst("storyId").split(",");
 			query += " WHERE StoryId IN (";
 		    int valueCount = values.length;

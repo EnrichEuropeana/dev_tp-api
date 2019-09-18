@@ -8,7 +8,6 @@ public class Ranking {
 	public Float MilesPerPerson;
 	public Integer Locations; 
 	public Integer TranscriptionCharacters; 
-	public Integer DescriptionCharacters;
 	public Integer Enrichments;
 	
 	
@@ -32,9 +31,6 @@ public class Ranking {
 	}
 	public void setTranscriptionCharacters(Integer transcriptionCharacters) {
 		TranscriptionCharacters = transcriptionCharacters;
-	}
-	public void setDescriptionCharacters(Integer descriptionCharacters) {
-		DescriptionCharacters = descriptionCharacters;
 	}
 	public void setEnrichments(Integer enrichments) {
 		Enrichments = enrichments;

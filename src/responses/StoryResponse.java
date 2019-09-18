@@ -165,31 +165,31 @@ public class StoryResponse {
 				  String[] PlaceUserIdList = new String[ItemIds.length];
 				  String[] PlaceUserGeneratedList = new String[ItemIds.length];
 				  if (rs.getString("PlaceId") != null) {
-					  PlaceIdList = rs.getString("PlaceId").split("§~§");
+					  PlaceIdList = rs.getString("PlaceId").split("§~§", -1);
 				  }
 				  if (rs.getString("PlaceName") != null) {
-					  PlaceNameList = rs.getString("PlaceName").split("§~§");
+					  PlaceNameList = rs.getString("PlaceName").split("§~§", -1);
 				  }
 				  if (rs.getString("PlaceLatitude") != null) {
-					  PlaceLatitudeList = rs.getString("PlaceLatitude").split("§~§");
+					  PlaceLatitudeList = rs.getString("PlaceLatitude").split("§~§", -1);
 				  }
 				  if (rs.getString("PlaceLongitude") != null) {
-					  PlaceLongitudeList = rs.getString("PlaceLongitude").split("§~§");
+					  PlaceLongitudeList = rs.getString("PlaceLongitude").split("§~§", -1);
 				  }
 				  if (rs.getString("PlaceLink") != null) {
-					  PlaceLinkList = rs.getString("PlaceLink").split("§~§");
+					  PlaceLinkList = rs.getString("PlaceLink").split("§~§", -1);
 				  }
 				  if (rs.getString("PlaceZoom") != null) {
-					  PlaceZoomList = rs.getString("PlaceZoom").split("§~§");
+					  PlaceZoomList = rs.getString("PlaceZoom").split("§~§", -1);
 				  }
 				  if (rs.getString("PlaceComment") != null) {
-					  PlaceCommentList = rs.getString("PlaceComment").split("§~§");
+					  PlaceCommentList = rs.getString("PlaceComment").split("§~§", -1);
 				  }
 				  if (rs.getString("PlaceUserId") != null) {
-					  PlaceUserIdList = rs.getString("PlaceUserId").split("§~§");
+					  PlaceUserIdList = rs.getString("PlaceUserId").split("§~§", -1);
 				  }
 				  if (rs.getString("PlaceUserGenerated") != null) {
-					  PlaceUserGeneratedList = rs.getString("PlaceUserGenerated").split("§~§");
+					  PlaceUserGeneratedList = rs.getString("PlaceUserGenerated").split("§~§", -1);
 				  }
 				  
 
@@ -414,15 +414,15 @@ public class StoryResponse {
 				", group_concat(IFNULL(i.ImageLink, 'NULL') SEPARATOR '§~§') as ImageLink" +
 				", group_concat(IFNULL(i.OrderIndex, 'NULL') SEPARATOR '§~§') as OrderIndex" +
 				", group_concat(IFNULL(i.Timestamp, 'NULL') SEPARATOR '§~§') as Timestamp" +
-				", group_concat(c.PlaceId SEPARATOR '§~§') as PlaceId " +
-				", group_concat(c.PlaceName SEPARATOR '§~§') as PlaceName " +
-				", group_concat(c.PlaceLatitude SEPARATOR '§~§') as PlaceLatitude " +
-				", group_concat(c.PlaceLongitude SEPARATOR '§~§') as PlaceLongitude " +
-				", group_concat(c.PlaceLink SEPARATOR '§~§') as PlaceLink " +
-				", group_concat(c.PlaceZoom SEPARATOR '§~§') as PlaceZoom " +
-				", group_concat(c.PlaceComment SEPARATOR '§~§') as PlaceComment " +
-				", group_concat(c.PlaceUserId SEPARATOR '§~§') as PlaceUserId " +
-				", group_concat(c.PlaceUserGenerated SEPARATOR '§~§') as PlaceUserGenerated " +
+				", group_concat(IFNULL(c.PlaceId, 'NULL') SEPARATOR '§~§') as PlaceId " +
+				", group_concat(IFNULL(c.PlaceName, 'NULL') SEPARATOR '§~§') as PlaceName " +
+				", group_concat(IFNULL(c.PlaceLatitude, 'NULL') SEPARATOR '§~§') as PlaceLatitude " +
+				", group_concat(IFNULL(c.PlaceLongitude, 'NULL') SEPARATOR '§~§') as PlaceLongitude " +
+				", group_concat(IFNULL(c.PlaceLink, 'NULL') SEPARATOR '§~§') as PlaceLink " +
+				", group_concat(IFNULL(c.PlaceZoom, 'NULL') SEPARATOR '§~§') as PlaceZoom " +
+				", group_concat(IFNULL(c.PlaceComment, 'NULL') SEPARATOR '§~§') as PlaceComment " +
+				", group_concat(IFNULL(c.PlaceUserId, 'NULL') SEPARATOR '§~§') as PlaceUserId " +
+				", group_concat(IFNULL(c.PlaceUserGenerated, 'NULL') SEPARATOR '§~§') as PlaceUserGenerated " +
 				"FROM " +
 					"(" +
 					"SELECT * " +
