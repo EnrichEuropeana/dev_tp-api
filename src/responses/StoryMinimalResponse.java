@@ -209,7 +209,8 @@ public class StoryMinimalResponse {
 				"	FROM\r\n" + 
 				"		Story\r\n" + 
 				"	) s ON s.StoryId = a.StoryId\r\n" + 
-				"GROUP BY StoryId;";
+				"GROUP BY StoryId " +
+				" ORDER BY StoryId DESC";
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
 		//ResponseBuilder rBuild = Response.ok(query);
