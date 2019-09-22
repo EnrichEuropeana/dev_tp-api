@@ -74,6 +74,7 @@ public class PlaceResponse {
 			  Place.setLatitude(rs.getFloat("Latitude"));
 			  Place.setLongitude(rs.getFloat("Longitude"));
 			  Place.setItemId(rs.getInt("ItemId"));
+			  Place.setItemTitle(rs.getString("Title"));
 			  Place.setLink(rs.getString("Link"));
 			  Place.setZoom(rs.getInt("Zoom"));
 			  Place.setComment(rs.getString("Comment"));
@@ -111,7 +112,10 @@ public class PlaceResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
-		String query = "SELECT * FROM Place WHERE 1";
+		String query = "SELECT \r\n" + 
+				"	*\r\n" + 
+				"FROM Place p\r\n" + 
+				"LEFT JOIN Item i On p.ItemId = i.ItemId WHERE 1";
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		
 		for(String key : queryParams.keySet()){
