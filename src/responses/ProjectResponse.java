@@ -129,7 +129,7 @@ public class ProjectResponse {
 	public String getApiKeys() throws SQLException{
 			String query = "SELECT * FROM ApiKey";
 		   List<ApiKey> apiKeys = new ArrayList<ApiKey>();
-	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
+	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
 
@@ -454,8 +454,9 @@ public class ProjectResponse {
 	@Path("/{project_id}/stories")
 	@POST
 	public Response insertStory(@PathParam("project_id") int projectId, @Context UriInfo uriInfo, String body, @Context HttpHeaders headers) throws Exception {
-
-	    FileWriter fileWriter = new FileWriter("request2.txt");
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		
+	    FileWriter fileWriter = new FileWriter(queryParams.getFirst("importName") + ".txt");
 	    fileWriter.write("test");
 	    fileWriter.close();
 		boolean auth = false;
