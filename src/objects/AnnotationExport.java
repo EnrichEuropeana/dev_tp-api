@@ -6,13 +6,16 @@ public class AnnotationExport {
 	public Integer EuropeanaAnnotationId;
 	public Integer AnnotationId;
 	public String Text;
+	public String TextNoTags;
 	public Timestamp Timestamp;
 	public Float X_Coord;
 	public Float Y_Coord;
 	public Float Width;
 	public Float Height;
 	public String Motivation;
-	public String ItemId;
+	public Integer OrderIndex;
+	public Integer TranscribathonItemId;
+	public Integer TranscribathonStoryId;
 	public String StoryUrl;
 	public String StoryId;
 	
@@ -24,6 +27,9 @@ public class AnnotationExport {
 	}
 	public void setText(String text) {
 		Text = text;
+	}
+	public void setTextNoTags(String textNoTags) {
+		TextNoTags = textNoTags;
 	}
 	public void setTimestamp(Timestamp timestamp) {
 		Timestamp = timestamp;
@@ -43,8 +49,14 @@ public class AnnotationExport {
 	public void setMotivation(String motivation) {
 		Motivation = motivation;
 	}
-	public void setItemId(String itemId) {
-		ItemId = itemId;
+	public void setOrderIndex(Integer orderIndex) {
+		OrderIndex = orderIndex;
+	}
+	public void setTranscribathonItemId(Integer transcribathonItemId) {
+		TranscribathonItemId = transcribathonItemId;
+	}
+	public void setTranscribathonStoryId(Integer transcribathonStoryId) {
+		TranscribathonStoryId = transcribathonStoryId;
 	}
 	public void setStoryUrl(String storyUrl) {
 		StoryUrl = storyUrl;

@@ -10,6 +10,8 @@ public class Place {
 	public String Link;
 	public Integer Zoom;
 	public String Comment;
+	public String WikidataName;
+	public String WikidataId;
 	public String UserGenerated;
 	public Integer UserId;
 	
@@ -47,6 +49,13 @@ public class Place {
 
 	public void setComment (String Comment) {
 		this.Comment = Comment;
+	}
+	public void setWikidataName(String wikidataName) {
+		WikidataName = wikidataName;
+	}
+
+	public void setWikidataId(String wikidataId) {
+		WikidataId = wikidataId;
 	}
 	
 	public void setUserGenerated (String UserGenerated) {

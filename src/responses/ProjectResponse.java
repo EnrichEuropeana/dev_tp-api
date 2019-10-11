@@ -1,6 +1,7 @@
 package responses;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -67,7 +68,7 @@ public class ProjectResponse {
 
 	public String executeQuery(String query, String type) throws SQLException{
 		   List<Project> projectList = new ArrayList<Project>();
-	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
+	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
 
@@ -183,7 +184,7 @@ public class ProjectResponse {
 	
 	public String executeDatasetQuery(String query, String type) throws SQLException{
 	    List<Dataset> datasetList = new ArrayList<Dataset>();
-		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
+		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
 
@@ -368,7 +369,7 @@ public class ProjectResponse {
 	
 
 	public String executeInsertQuery(String query, String type) throws SQLException, ClientProtocolException, IOException{
-		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
+		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
 
@@ -455,10 +456,7 @@ public class ProjectResponse {
 	@POST
 	public Response insertStory(@PathParam("project_id") int projectId, @Context UriInfo uriInfo, String body, @Context HttpHeaders headers) throws Exception {
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-		
-	    FileWriter fileWriter = new FileWriter(queryParams.getFirst("importName") + ".txt");
-	    fileWriter.write("test");
-	    fileWriter.close();
+	    
 		boolean auth = false;
 		String authorizationToken = "";
 		if (headers.getRequestHeader(HttpHeaders.AUTHORIZATION) != null) {
@@ -512,12 +510,14 @@ public class ProjectResponse {
 		List<String> values = new ArrayList<String>();
 		
 		String manifestUrl = "";
+		Boolean converted = false;
 		String storyTitle = "";
 		String recordId = "";
 		String imageLink = "";
 		
 		if (data.getAsJsonObject().has("iiif_url")) {
 			manifestUrl = data.getAsJsonObject().get("iiif_url").getAsString();
+			converted = true;
 		}
 
 		for (int i = 0; i < keyCount; i++) {
@@ -706,7 +706,7 @@ public class ProjectResponse {
 			}
 		}
 		else {
-			try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
+			try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
 
@@ -737,7 +737,6 @@ public class ProjectResponse {
     	                JsonObject authData = new JsonParser().parse(writer.toString()).getAsJsonObject();
 
     	    	        String authHeader = authData.get("access_token").toString();
-    	    	        //httppost2.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
 
         	            URL url = new URL(manifestUrl);
         				HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -745,6 +744,18 @@ public class ProjectResponse {
 						con.setRequestMethod("GET");
 						con.setRequestProperty("Content-Type", "application/json");
 					    con.setRequestProperty("Authorization", "Bearer " + authHeader.replace("\"", "") );
+					    
+					    if (converted == false) {
+	    	    	        String redirect = con.getHeaderField("Location");
+	    					
+		    				if (redirect != null){
+		    					con = (HttpURLConnection) new URL(redirect).openConnection();
+		    				}
+		    				else {
+		    					con = (HttpURLConnection) new URL(con.getURL().toString()).openConnection();
+		    				}
+					    }
+					    
 
 						BufferedReader in = new BufferedReader(
 						  new InputStreamReader(con.getInputStream(), "UTF-8"));
@@ -800,6 +811,16 @@ public class ProjectResponse {
 			}
 		}
 
+		if (recordId.contains("/")) {
+			String[] recordIdSplit = recordId.split("/");
+			recordId = recordIdSplit[recordIdSplit.length - 2]	+ "_" +recordIdSplit[recordIdSplit.length - 1];	
+		}
+		File file = new File("/home/enrich/imports/" + queryParams.getFirst("importName") + "/" + recordId + ".txt");
+		file.getParentFile().mkdirs();
+		FileWriter fileWriter = new FileWriter(file);
+		fileWriter.write(body);
+	    fileWriter.close();
+		
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();
 	}

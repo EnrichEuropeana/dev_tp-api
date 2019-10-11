@@ -212,8 +212,8 @@ public class StoryMinimalResponse {
 				"GROUP BY StoryId " +
 				" ORDER BY StoryId DESC";
 		String resource = executeQuery(query, "Select");
-		//ResponseBuilder rBuild = Response.ok(resource);
-		ResponseBuilder rBuild = Response.ok(query);
+		ResponseBuilder rBuild = Response.ok(resource);
+		//ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
 

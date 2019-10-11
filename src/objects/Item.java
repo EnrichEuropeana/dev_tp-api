@@ -29,6 +29,8 @@ public class Item {
 	public Integer DescriptionLanguage;
 	public Timestamp DateStart;
 	public Timestamp DateEnd;
+	public String DateStartDisplay;
+	public String DateEndDisplay;
 	public Integer DatasetId;
 	public String ImageLink;
 	public Integer OrderIndex;
@@ -290,6 +292,12 @@ public class Item {
 	}
 	public void setDateEnd(Timestamp dateEnd) {
 		DateEnd = dateEnd;
+	}
+	public void setDateStartDisplay(String dateStartDisplay) {
+		DateStartDisplay = dateStartDisplay;
+	}
+	public void setDateEndDisplay(String dateEndDisplay) {
+		DateEndDisplay = dateEndDisplay;
 	}
 	public void setDatasetId(Integer datasetId) {
 		DatasetId = datasetId;
