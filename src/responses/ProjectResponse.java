@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -68,7 +69,7 @@ public class ProjectResponse {
 
 	public String executeQuery(String query, String type) throws SQLException{
 		   List<Project> projectList = new ArrayList<Project>();
-	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
 
@@ -130,7 +131,7 @@ public class ProjectResponse {
 	public String getApiKeys() throws SQLException{
 			String query = "SELECT * FROM ApiKey";
 		   List<ApiKey> apiKeys = new ArrayList<ApiKey>();
-	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
 
@@ -184,7 +185,7 @@ public class ProjectResponse {
 	
 	public String executeDatasetQuery(String query, String type) throws SQLException{
 	    List<Dataset> datasetList = new ArrayList<Dataset>();
-		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
 
@@ -296,6 +297,37 @@ public class ProjectResponse {
 	    	return "Fields missing";
 	    }
 	}
+
+	
+	//Add new entry
+	@Path("/test")
+	@POST
+	public String test(String body) throws SQLException, IOException {
+	    URL storySolr = new URL("http://fresenia.man.poznan.pl:8983/solr/Stories/dataimport?command=full-import&clean=true");
+	    HttpURLConnection con = (HttpURLConnection) storySolr.openConnection();
+	    con.setRequestMethod("GET");
+	    BufferedReader in = new BufferedReader(
+	    new InputStreamReader(con.getInputStream()));
+	    String inputLine;
+	    StringBuffer content = new StringBuffer();
+	    while ((inputLine = in.readLine()) != null) {
+	        content.append(inputLine);
+	    }
+	    in.close();
+	    con.disconnect();
+	    
+	    URL itemSolr = new URL("http://fresenia.man.poznan.pl:8983/solr/Items/dataimport?command=full-import&clean=true");
+	    con = (HttpURLConnection) itemSolr.openConnection();
+	    con.setRequestMethod("GET");
+	    in = new BufferedReader(
+	    new InputStreamReader(con.getInputStream()));
+	    content = new StringBuffer();
+	    while ((inputLine = in.readLine()) != null) {
+	        content.append(inputLine);
+	    }
+	    in.close();
+		return content.toString();
+	}
 	
 
 	//Edit entry by id
@@ -369,7 +401,7 @@ public class ProjectResponse {
 	
 
 	public String executeInsertQuery(String query, String type) throws SQLException, ClientProtocolException, IOException{
-		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
 
@@ -706,7 +738,7 @@ public class ProjectResponse {
 			}
 		}
 		else {
-			try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+			try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
 
@@ -820,6 +852,31 @@ public class ProjectResponse {
 		FileWriter fileWriter = new FileWriter(file);
 		fileWriter.write(body);
 	    fileWriter.close();
+
+	    URL storySolr = new URL("http://fresenia.man.poznan.pl:8983/solr/Stories/dataimport?command=full-import&clean=true");
+	    HttpURLConnection con = (HttpURLConnection) storySolr.openConnection();
+	    con.setRequestMethod("GET");
+	    BufferedReader in = new BufferedReader(
+	    new InputStreamReader(con.getInputStream()));
+	    String inputLine;
+	    StringBuffer content = new StringBuffer();
+	    while ((inputLine = in.readLine()) != null) {
+	        content.append(inputLine);
+	    }
+	    in.close();
+	    con.disconnect();
+	    
+	    URL itemSolr = new URL("http://fresenia.man.poznan.pl:8983/solr/Items/dataimport?command=full-import&clean=true");
+	    con = (HttpURLConnection) itemSolr.openConnection();
+	    con.setRequestMethod("GET");
+	    in = new BufferedReader(
+	    new InputStreamReader(con.getInputStream()));
+	    content = new StringBuffer();
+	    while ((inputLine = in.readLine()) != null) {
+	        content.append(inputLine);
+	    }
+	    in.close();
+	    con.disconnect();
 		
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();
