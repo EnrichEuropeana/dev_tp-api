@@ -69,7 +69,7 @@ public class ProjectResponse {
 
 	public String executeQuery(String query, String type) throws SQLException{
 		   List<Project> projectList = new ArrayList<Project>();
-	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
+	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
 
@@ -131,7 +131,7 @@ public class ProjectResponse {
 	public String getApiKeys() throws SQLException{
 			String query = "SELECT * FROM ApiKey";
 		   List<ApiKey> apiKeys = new ArrayList<ApiKey>();
-	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
+	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
 
@@ -185,7 +185,7 @@ public class ProjectResponse {
 	
 	public String executeDatasetQuery(String query, String type) throws SQLException{
 	    List<Dataset> datasetList = new ArrayList<Dataset>();
-		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
+		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
 
@@ -401,7 +401,7 @@ public class ProjectResponse {
 	
 
 	public String executeInsertQuery(String query, String type) throws SQLException, ClientProtocolException, IOException{
-		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
+		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
 
@@ -564,6 +564,13 @@ public class ProjectResponse {
 									storyTitle = entry.getValue().getAsJsonObject().get("@value").toString();
 								}
 							}
+							else {
+								int index = keys.indexOf(entry.getKey());
+								values.set(index, "\"" + values.get(index).replace("\"", "") + " || " + entry.getValue().getAsJsonObject().get("@value").toString().replace("\"", "") + "\"");
+								if (entry.getKey().equals("dc:title")) {
+									storyTitle = "\"" + storyTitle.replace("\"", "") + " || " + entry.getValue().getAsJsonObject().get("@value").toString().replace("\"", "") + "\"";
+								}
+							}
 						}
 						else if (entry.getValue().getAsJsonObject().has("@id")) {
 							if (!keys.contains(entry.getKey())) {
@@ -571,6 +578,13 @@ public class ProjectResponse {
 								values.add(entry.getValue().getAsJsonObject().get("@id").toString());
 								if (entry.getKey().equals("dc:title")) {
 									storyTitle = entry.getValue().getAsJsonObject().get("@id").toString();
+								}
+							}
+							else {
+								int index = keys.indexOf(entry.getKey());
+								values.set(index, "\"" + values.get(index).replace("\"", "") + " || " + entry.getValue().getAsJsonObject().get("@id").toString().replace("\"", "") + "\"");
+								if (entry.getKey().equals("dc:title")) {
+									storyTitle = "\"" + storyTitle.replace("\"", "") + " || " + entry.getValue().getAsJsonObject().get("@value").toString().replace("\"", "") + "\"";
 								}
 							}
 						}
@@ -597,12 +611,18 @@ public class ProjectResponse {
 											key = entry.getKey();
 											value = element.get("@value").toString();
 										}
+										else {
+											value = "\"" + value.replace("\"", "") + " || " +  element.get("@value").toString().replace("\"", "") + "\"";
+										}
 									}
 								}
 								else {
 									if (key == "") {
 										key = entry.getKey();
 										value = entry.getValue().getAsJsonArray().get(j).toString();
+									}
+									else {
+										value = "\"" + value.replace("\"", "") + " || " + entry.getValue().getAsJsonArray().get(j).toString().replace("\"", "") + "\"";
 									}
 								}
 							}
@@ -612,6 +632,13 @@ public class ProjectResponse {
 								if (entry.getKey().equals("dc:title")) {
 									storyTitle = "\"" + value.replace(",", " | ").replaceAll("[\"{}\\[\\]]", "") + "\"";
 								}						
+							}
+						}
+						else {
+							int index = keys.indexOf(entry.getKey());
+							values.set(index, values.get(index) + " || " + entry.getValue().getAsJsonObject().get("@value").toString());
+							if (entry.getKey().equals("dc:title")) {
+								storyTitle = "\"" + storyTitle.replace("\"", "") + " || " + entry.getValue().getAsJsonObject().get("@value").toString().replace("\"", "") + "\"";
 							}
 						}
 					}
@@ -637,6 +664,15 @@ public class ProjectResponse {
 								keys.add("PlaceLongitude");
 								values.add(dataArray.get(i).getAsJsonObject().get("geo:lat").toString());
 								values.add(dataArray.get(i).getAsJsonObject().get("geo:long").toString());
+							}
+						}
+						else if (dataArray.get(i).getAsJsonObject().keySet().contains("wgs84_pos:lat")
+								&& dataArray.get(i).getAsJsonObject().keySet().contains("wgs84_pos:long")) {
+							if (!keys.contains("PlaceLatitude")) {
+								keys.add("PlaceLatitude");
+								keys.add("PlaceLongitude");
+								values.add(dataArray.get(i).getAsJsonObject().get("wgs84_pos:lat").toString());
+								values.add(dataArray.get(i).getAsJsonObject().get("wgs84_pos:long").toString());
 							}
 						}
 						if (dataArray.get(i).getAsJsonObject().keySet().contains("skos:prefLabel")) {
@@ -738,7 +774,7 @@ public class ProjectResponse {
 			}
 		}
 		else {
-			try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/tp-api/WEB-INF/config.properties")) {
+			try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
 
