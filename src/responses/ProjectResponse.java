@@ -589,7 +589,7 @@ public class ProjectResponse {
 							}
 						}
 					}
-					else if (entry.getValue().isJsonArray()){	
+					else if (entry.getValue().isJsonArray()) {
 						if (!keys.contains(entry.getKey())) {
 							String key = "";
 							String value = "";
@@ -612,7 +612,12 @@ public class ProjectResponse {
 											value = element.get("@value").toString();
 										}
 										else {
-											value = "\"" + value.replace("\"", "") + " || " +  element.get("@value").toString().replace("\"", "") + "\"";
+											if (element.has("@value")) {
+												value = "\"" + value.replace("\"", "") + " || " +  element.get("@value").toString().replace("\"", "") + "\"";
+											}
+											if (element.has("@id")) {
+												value = "\"" + value.replace("\"", "") + " || " +  element.get("@id").toString().replace("\"", "") + "\"";
+											}
 										}
 									}
 								}
@@ -636,9 +641,29 @@ public class ProjectResponse {
 						}
 						else {
 							int index = keys.indexOf(entry.getKey());
-							values.set(index, values.get(index) + " || " + entry.getValue().getAsJsonObject().get("@value").toString());
+							String value = "";
+							for (int j = 0; j < entry.getValue().getAsJsonArray().size(); j++) {
+								if (entry.getValue().getAsJsonArray().get(j).isJsonObject()) {
+									JsonObject element = entry.getValue().getAsJsonArray().get(j).getAsJsonObject();
+									if (element.has("@language") && element.get("@language").toString().contains("en")) {
+										value = "\"" + value.replace("\"", "") + " || " +  element.get("@value").toString().replace("\"", "") + "\"";
+									}
+									else {
+										if (element.has("@value")) {
+											value = "\"" + value.replace("\"", "") + " || " +  element.get("@value").toString().replace("\"", "") + "\"";
+										}
+										if (element.has("@id")) {
+											value = "\"" + value.replace("\"", "") + " || " +  element.get("@id").toString().replace("\"", "") + "\"";
+										}
+									}
+								}
+								else {
+									value = "\"" + value.replace("\"", "") + " || " + entry.getValue().getAsJsonArray().get(j).toString().replace("\"", "") + "\"";
+								}
+							}
+							values.set(index, "\"" + values.get(index).replace("\"", "") + " || " + value.replace("\"", "") + "\"");
 							if (entry.getKey().equals("dc:title")) {
-								storyTitle = "\"" + storyTitle.replace("\"", "") + " || " + entry.getValue().getAsJsonObject().get("@value").toString().replace("\"", "") + "\"";
+								storyTitle = "\"" + storyTitle.replace("\"", "") + " || " + value + "\"";
 							}
 						}
 					}
@@ -648,6 +673,13 @@ public class ProjectResponse {
 							values.add("\"" + entry.getValue().toString().replace(",", " | ").replaceAll("[\"{}\\[\\]]", "") + "\"");
 							if (entry.getKey().equals("dc:title")) {
 								storyTitle = "\"" + entry.getValue().toString().replace(",", " | ").replaceAll("[\"{}\\[\\]]", "") + "\"";
+							}
+						}
+						else {
+							int index = keys.indexOf(entry.getKey());
+							values.set(index, "\"" + values.get(index).replace("\"", "") + " || " + entry.getValue().toString().replace("\"", "") + "\"");
+							if (entry.getKey().equals("dc:title")) {
+								storyTitle = "\"" + storyTitle.replace("\"", "") + " || " + entry.getValue().toString().replace("\"", "") + "\"";
 							}
 						}
 					}
