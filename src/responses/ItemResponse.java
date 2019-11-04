@@ -157,6 +157,7 @@ public class ItemResponse {
 				  String[] TranscriptionTexts = rs.getString("TranscriptionText").split("&~&", -1);
 				  String[] TranscriptionTextNoTags = rs.getString("TranscriptionTextNoTags").split("&~&", -1);
 				  String[] TranscriptionUserIds = rs.getString("TranscriptionUserId").split("&~&", -1);
+				  String[] TranscriptionWP_UserIds = rs.getString("TranscriptionWP_UserId").split("&~&", -1);
 				  String[] TranscriptionCurrentVersions = rs.getString("TranscriptionCurrentVersion").split("&~&", -1);
 				  String[] TranscriptionTimestamps = rs.getString("TranscriptionTimestamp").split("&~&", -1);
 				  String[] TranscriptionEuropeanaAnnotationIds = new String[TranscriptionIds.length];
@@ -192,6 +193,7 @@ public class ItemResponse {
 					  transcription.setText(TranscriptionTexts[i]);
 					  transcription.setTextNoTags(TranscriptionTextNoTags[i]);
 					  transcription.setUserId(Integer.parseInt(TranscriptionUserIds[i]));
+					  transcription.setWP_UserId(Integer.parseInt(TranscriptionWP_UserIds[i]));
 					  transcription.setCurrentVersion(TranscriptionCurrentVersions[i]);
 				      transcription.setTimestamp(TranscriptionTimestamps[i]);
 					  if (TranscriptionEuropeanaAnnotationIds[i] != null) {
@@ -520,6 +522,7 @@ public class ItemResponse {
 				"            d.TranscriptionText AS TranscriptionText,\r\n" + 
 				"            d.TranscriptionTextNoTags AS TranscriptionTextNoTags,\r\n" + 
 				"            d.TranscriptionUserId AS TranscriptionUserId,\r\n" + 
+				"            d.TranscriptionWP_UserId AS TranscriptionWP_UserId,\r\n" + 
 				"            d.TranscriptionCurrentVersion AS TranscriptionCurrentVersion,\r\n" + 
 				"            d.TranscriptionTimestamp AS TranscriptionTimestamp,\r\n" + 
 				"            d.TranscriptionEuropeanaAnnotationId AS TranscriptionEuropeanaAnnotationId,\r\n" + 
@@ -704,6 +707,8 @@ public class ItemResponse {
 				"                SEPARATOR '&~&') AS TranscriptionTextNoTags,\r\n" + 
 				"            GROUP_CONCAT(t.UserId\r\n" + 
 				"                SEPARATOR '&~&') AS TranscriptionUserId,\r\n" + 
+				"            GROUP_CONCAT(t.CurrentVersion + 0\r\n" + 
+				"                SEPARATOR '&~&') AS TranscriptionWP_UserId,\r\n" + 
 				"            GROUP_CONCAT(t.CurrentVersion + 0\r\n" + 
 				"                SEPARATOR '&~&') AS TranscriptionCurrentVersion,\r\n" + 
 				"            GROUP_CONCAT(t.Timestamp\r\n" + 

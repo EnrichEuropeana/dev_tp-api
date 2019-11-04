@@ -12,6 +12,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
+import objects.Annotation;
+import objects.Score;
 import objects.TranscriptionProfile;
 
 import java.util.*;
@@ -68,13 +70,27 @@ public class TranscriptionProfileResponse {
 		      //Retrieve by column name
 			  TranscriptionProfile transcriptionProfile = new TranscriptionProfile();
 			  transcriptionProfile.setTimestamp(rs.getTimestamp("Timestamp"));
-			  transcriptionProfile.setUserId(rs.getInt("UserId"));
-			  transcriptionProfile.setWP_UserId(rs.getInt("WP_UserId"));
 			  transcriptionProfile.setItemId(rs.getInt("ItemId"));
-			  transcriptionProfile.setAmount(rs.getInt("Amount"));
 			  transcriptionProfile.setItemTitle(rs.getString("ItemTitle"));
+			  transcriptionProfile.setItemImageLink(rs.getString("ItemImageLink"));
 			  transcriptionProfile.setCompletionStatus(rs.getString("CompletionStatus"));
-			  transcriptionProfile.setScoreType(rs.getString("ScoreType"));
+			  transcriptionProfile.setProjectUrl(rs.getString("ProjectUrl"));
+			  
+			  //Add Scores
+			  List<Score> ScoreList = new ArrayList<Score>();
+			  if (rs.getString("Amount") != null) {
+				  String[] ScoreAmounts = rs.getString("Amount").split(",", -1);
+				  String[] ScoreTypes = rs.getString("ScoreType").split(",", -1);
+				  for (int i = 0; i < ScoreAmounts.length; i++) {
+					  Score score = new Score();
+					  score.setAmount(Integer.parseInt(ScoreAmounts[i]));
+					  score.setScoreType(ScoreTypes[i]);
+					  ScoreList.add(score);
+				  }
+			  }
+			  
+			  transcriptionProfile.setScores(ScoreList);
+			  
 			  transcriptionProfileList.add(transcriptionProfile);
 		   }
 		
@@ -104,56 +120,45 @@ public class TranscriptionProfileResponse {
 
 	
 	//Search using custom filters
-	@Path("")
+	@Path("/{wp_userId}")
 	@Produces("application/json;charset=utf-8")
 	@GET
-	public Response search(@Context UriInfo uriInfo) throws SQLException {
-		/*
-		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-		
-		String query = "SELECT \r\n" + 
-				"	s.ItemId as ItemId,\r\n" + 
-				"	i.Title AS ItemTitle,\r\n" + 
-				"	c.Name AS CompletionStatus\r\n" + 
-				"FROM\r\n" + 
-				"(\r\n" + 
-				"SELECT \r\n" + 
-				"	DISTINCT(s.ItemId) as ItemId\r\n" + 
-				"    FROM\r\n" + 
-				"        Score s\r\n" + 
-				"    LEFT JOIN User u ON s.UserId = u.UserId\r\n";
-		if (queryParams.containsKey("WP_UserId")) {
-			query +=  " WHERE s.UserId = "
-						+ "(SELECT UserId FROM User WHERE WP_UserId = " + queryParams.getFirst("WP_UserId") + ") ";
-		}
-		query += ") s\r\n" + 
-				"LEFT JOIN Item i ON s.ItemId = i.ItemId\r\n" + 
-				"LEFT JOIN CompletionStatus c ON i.CompletionStatusId = c.CompletionStatusId";
-
-		String resource = executeQuery(query, "Select");
-		ResponseBuilder rBuild = Response.ok(resource);
-		//ResponseBuilder rBuild = Response.ok(query);
-        return rBuild.build();*/
-		String query = "SELECT  " + 
-				"    * " + 
-				"FROM " + 
-				"    (SELECT  " + 
-				"			st.Name as ScoreType, " + 
-				"            s.Amount, " + 
-				"            s.Timestamp, " + 
-				"            s.UserId, " + 
-				"            s.ItemId, " + 
-				"            u.WP_UserId, " + 
-				"            i.ImageLink AS ItemImageLink, " + 
-				"            i.Title AS ItemTitle, " + 
-				"            c.Name AS CompletionStatus " + 
-				"    FROM " + 
-				"        Score s " + 
-				"    JOIN ScoreType st ON s.ScoreTypeId = st.ScoreTypeId " + 
-				"    JOIN User u ON s.UserId = u.UserId " + 
-				"    JOIN Item i ON s.ItemId = i.ItemId " + 
-				"    JOIN CompletionStatus c ON i.CompletionStatusId = c.CompletionStatusId) a " + 
-				"WHERE 1";
+	public Response search(@PathParam("wp_userId") int wp_userId, @Context UriInfo uriInfo) throws SQLException {
+		String query = "SELECT    \r\n" + 
+				"				    *   \r\n" + 
+				"				FROM   \r\n" + 
+				"				    (SELECT      \r\n" + 
+				"							i.ItemId AS ItemId,\r\n" + 
+				"				            i.ImageLink AS ItemImageLink,   \r\n" + 
+				"				            i.Title AS ItemTitle,   \r\n" + 
+				"				            c.Name AS CompletionStatus,   \r\n" + 
+				"				            p.Url AS ProjectUrl   \r\n" + 
+				"				    FROM   Item i  \r\n" + 
+				"				    JOIN CompletionStatus c ON i.CompletionStatusId = c.CompletionStatusId   \r\n" + 
+				"				    JOIN Story story ON i.StoryId = story.StoryId   \r\n" + 
+				"				    JOIN Project p ON story.ProjectId = p.ProjectId) i   \r\n" + 
+				"                    INNER JOIN \r\n" + 
+				"                    (\r\n" + 
+				"						SELECT \r\n" + 
+				"							s.ItemId,\r\n" + 
+				"                            GROUP_CONCAT(Amount) AS Amount,\r\n" + 
+				"                            GROUP_CONCAT(ScoreType) AS ScoreType,\r\n" + 
+				"							MAX(Timestamp) AS Timestamp\r\n" + 
+				"						FROM\r\n" + 
+				"							(\r\n" + 
+				"								SELECT \r\n" + 
+				"									s.ItemId,\r\n" + 
+				"									SUM(s.Amount) as Amount,\r\n" + 
+				"									st.Name as ScoreType,\r\n" + 
+				"                                    MAX(Timestamp) AS Timestamp\r\n" + 
+				"								FROM Score s \r\n" + 
+				"								JOIN ScoreType st ON s.ScoreTypeId = st.ScoreTypeId \r\n" + 
+				"								WHERE s.UserId = (SELECT UserId FROM User WHERE WP_UserId = " + wp_userId + ")\r\n" + 
+				"								GROUP BY s.ItemId, st.Name\r\n" + 
+				"							) s\r\n" + 
+				"						GROUP BY s.ItemId\r\n" + 
+				"						ORDER BY Timestamp DESC\r\n" + 
+				"					) s ON i.ItemId = s.ItemId\r\n";
 
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		

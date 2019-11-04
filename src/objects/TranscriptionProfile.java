@@ -1,17 +1,18 @@
 package objects;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 public class TranscriptionProfile {
 	public Timestamp Timestamp;
 	public Integer UserId;
 	public Integer WP_UserId;
 	public Integer ItemId;
-	public Integer Amount;
 	public String ItemImageLink;
 	public String ItemTitle;
 	public String CompletionStatus;
-	public String ScoreType;
+	public String ProjectUrl;
+	public List<Score> Scores;
 	
 	public void setTimestamp(Timestamp timestamp) {
 		Timestamp = timestamp;
@@ -25,9 +26,6 @@ public class TranscriptionProfile {
 	public void setItemId(Integer itemId) {
 		ItemId = itemId;
 	}
-	public void setAmount(Integer amount) {
-		Amount = amount;
-	}
 	public void setItemImageLink(String itemImageLink) {
 		ItemImageLink = itemImageLink;
 	}
@@ -37,7 +35,10 @@ public class TranscriptionProfile {
 	public void setCompletionStatus(String completionStatus) {
 		CompletionStatus = completionStatus;
 	}
-	public void setScoreType(String scoreType) {
-		ScoreType = scoreType;
+	public void setProjectUrl(String projectUrl) {
+		ProjectUrl = projectUrl;
+	}
+	public void setScores(List<Score> scores) {
+		Scores = scores;
 	}
 }

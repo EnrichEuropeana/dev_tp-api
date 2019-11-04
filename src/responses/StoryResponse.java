@@ -906,7 +906,8 @@ public class StoryResponse {
 					"            s.DateEnd AS StoryDateEnd,\r\n" + 
 					"            s.OrderIndex AS StoryOrderIndex" + 
 					"	FROM\r\n" + 
-					"		Story s";
+					"		Story s " +
+					"	WHERE StoryId = " + id;
 			
 			String resource = executeQueryNoItems(query, "Select");
 			ResponseBuilder rBuild = Response.ok(resource);
