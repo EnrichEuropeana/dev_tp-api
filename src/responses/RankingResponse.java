@@ -73,6 +73,7 @@ public class RankingResponse {
 		      //Retrieve by column name
 			  Ranking ranking = new Ranking();
 			  ranking.setUserId(rs.getInt("UserId"));
+			  ranking.setEventUser(rs.getInt("EventUser"));
 			  ranking.setTeamId(rs.getInt("TeamId"));
 			  ranking.setTeamName(rs.getString("TeamName"));
 			  ranking.setMiles(rs.getFloat("Miles"));
@@ -115,6 +116,7 @@ public class RankingResponse {
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		String query = "SELECT \r\n" + 
 						"	u.WP_UserId as UserId, \r\n" + 
+						"	u.EventUser as EventUser, \r\n" + 
 						"	0 as TeamId, \r\n" + 
 					    " 	0 as TeamName, \r\n" +
 						"    SUM(s.Miles) as Miles,\r\n" + 
@@ -139,9 +141,9 @@ public class RankingResponse {
 					+ " AND s.Timestamp <= (SELECT End FROM Campaign WHERE CampaignId = " + queryParams.getFirst("campaign") + ") ";
 		}
 		query +=		") s " + 
-						"JOIN User u ON s.UserId = u.UserId  \r\n" + 
-						"GROUP BY UserId\r\n" + 
-						"ORDER BY Miles DESC ";
+						"JOIN User u ON s.UserId = u.UserId  \r\n";
+		query +=		"WHERE 1 ";
+		
 		for(String key : queryParams.keySet()){
 			if (key.equals("limit") || key.equals("offset") || key.equals("campaign")) {
 				continue;
@@ -159,6 +161,9 @@ public class RankingResponse {
 		    }
 		    query += ")";
 		}
+		
+		query +=		" GROUP BY UserId, EventUser\r\n" + 
+						"ORDER BY Miles DESC ";
 				
 		if (queryParams.getFirst("limit") != null) {
 			query += "LIMIT " + queryParams.getFirst("limit") + " ";
@@ -177,9 +182,34 @@ public class RankingResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response getUserCount(@Context UriInfo uriInfo) throws SQLException {
-		String query = "SELECT count(DISTINCT(UserId)) as UserCount FROM Score";
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		String query = "SELECT "
+						+ "count(DISTINCT(s.UserId)) as UserCount, "
+						+ "u.UserId "
+						+ "FROM Score s "
+						+ "JOIN User u "
+						+ "ON s.UserId = u.UserId "
+						+ "WHERE 1";
+		for(String key : queryParams.keySet()){
+			if (key.equals("limit") || key.equals("offset") || key.equals("campaign")) {
+				continue;
+			}
+			String[] values = queryParams.getFirst(key).split(",");
+			query += " AND (";
+		    int valueCount = values.length;
+		    int i = 1;
+		    for(String value : values) {
+		    	query += key + " = '" + value + "'";
+			    if (i < valueCount) {
+			    	query += " OR ";
+			    }
+			    i++;
+		    }
+		    query += ")";
+		}
 		String resource = executeQuery(query, "UserCount");
-		ResponseBuilder rBuild = Response.ok(resource);
+		//ResponseBuilder rBuild = Response.ok(resource);
+		ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
 

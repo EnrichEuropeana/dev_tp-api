@@ -586,6 +586,7 @@ public class ProjectResponse {
 		String manifestUrl = "";
 		Boolean converted = false;
 		String storyTitle = "";
+		String externalRecordId = "";
 		String recordId = "";
 		String imageLink = "";
 		
@@ -781,11 +782,11 @@ public class ProjectResponse {
 						}
 						else if (entry.getKey().equals("@type") && entry.getValue().getAsString().equals("edm:ProvidedCHO")) {
 							if (dataArray.get(i).getAsJsonObject().keySet().contains("@id")){
-								if (dataArray.get(i).getAsJsonObject().get("@id").getAsString().contains("europeana.eu")) {
+								//if (dataArray.get(i).getAsJsonObject().get("@id").getAsString().startsWith("http://data.europeana")) {
+									externalRecordId = dataArray.get(i).getAsJsonObject().get("@id").getAsString();
 									String[] arr = dataArray.get(i).getAsJsonObject().get("@id").getAsString().split("/");
 									recordId = "/" + arr[arr.length - 2] + "/" + arr[arr.length - 1];
-								}
-								recordId = dataArray.get(i).getAsJsonObject().get("@id").getAsString();
+								//}
 							}
 						}
 					}
@@ -809,6 +810,7 @@ public class ProjectResponse {
 			query += "INSERT INTO Story (";
 
 		    query += "ExternalRecordId, ";
+		    query += "RecordId, ";
 			Iterator<String> keysIterator = keys.iterator();
 		    while (keysIterator.hasNext()) {
 				query += "`" + keysIterator.next() + "`";
@@ -817,6 +819,7 @@ public class ProjectResponse {
 		        }
 			}
 		    query += ") VALUES (";
+		    query += "\"" + externalRecordId + "\", ";
 		    query += "\"" + recordId + "\", ";
 			Iterator<String> valuesIterator = values.iterator();
 		    while (valuesIterator.hasNext()) {
@@ -826,6 +829,7 @@ public class ProjectResponse {
 		        }
 			}
 		    query += ")";
+
 			resource = executeInsertQuery(query, "Import");
 			if (resource == "Failed") {
 				ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);

@@ -207,7 +207,7 @@ public class AnnotationExportResponse {
 				"    i.ItemId as TranscribathonItemId, " + 
 				"    s.StoryId as TranscribathonStoryId, " + 
 				"    s.`edm:landingPage` as StoryUrl, " + 
-				"    s.ExternalRecordId as StoryId " + 
+				"    s.RecordId as StoryId " + 
 				"FROM " + 
 				"    Annotation a " + 
 				"        LEFT JOIN " + 
@@ -235,7 +235,7 @@ public class AnnotationExportResponse {
 				"    i.ItemId, " + 
 				"    s.StoryId, " + 
 				"    s.`edm:landingPage`, " + 
-				"    s.ExternalRecordId " + 
+				"    s.RecordId " + 
 				"FROM " + 
 				"    Transcription t " + 
 				"        LEFT JOIN " + 

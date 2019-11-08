@@ -17,11 +17,16 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
 import objects.Annotation;
 import objects.Comment;
@@ -39,6 +44,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.text.DateFormat;
@@ -454,6 +460,57 @@ public class ItemResponse {
 	    String result = gsonBuilder.toJson(itemList);
 	    return result;
 	}
+	
+
+	public String executeDataQuery(String query, String field) throws SQLException{
+		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+
+            Properties prop = new Properties();
+
+            // load a properties file
+            prop.load(input);
+
+            // get the property value and print it out
+            final String DB_URL = prop.getProperty("DB_URL");
+            final String USER = prop.getProperty("USER");
+            final String PASS = prop.getProperty("PASS");
+            
+		   // Register JDBC driver
+		   try {
+			Class.forName("com.mysql.jdbc.Driver");
+		
+		   // Open a connection
+		   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		   // Execute SQL query
+		   Statement stmt = conn.createStatement();
+		   ResultSet rs = stmt.executeQuery(query);
+		   
+		   // Extract data from result set
+		   while(rs.next()){
+			   String result = rs.getString(field);
+			   rs.close();
+			   stmt.close();
+			   conn.close();
+			   return result;
+		   }
+		
+		   // Clean-up environment
+		   rs.close();
+		   stmt.close();
+		   conn.close();
+		   } catch(SQLException se) {
+		       //Handle errors for JDBC
+			   se.printStackTrace();
+		   } catch (ClassNotFoundException e) {
+			   e.printStackTrace();
+		}
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	    return "";
+	}
 
 	//Get all Entries
 	@Path("")
@@ -857,7 +914,7 @@ public class ItemResponse {
 	//Edit entry by id
 	@Path("/{id}")
 	@POST
-	public Response update(@PathParam("id") int id, String body) throws SQLException {
+	public Response update(@PathParam("id") int id, String body) throws SQLException, ClientProtocolException, IOException {
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
 	    JsonObject  changes = gson.fromJson(body, JsonObject.class);
@@ -878,8 +935,41 @@ public class ItemResponse {
 			}
 			query += " WHERE ItemId = " + id;
 			String resource = executeQuery(query, "Update");
-			//ResponseBuilder rBuild = Response.ok(resource);
-			ResponseBuilder rBuild = Response.ok(query);
+
+			String completionQuery = "SELECT * FROM Item WHERE ItemId = " + id;
+			String completionStatus = executeDataQuery(completionQuery, "CompletionStatusId");
+			String exportedQuery = "SELECT * FROM Item WHERE ItemId = " + id;
+			String exported = executeDataQuery(exportedQuery, "Exported");
+			String recordIdQuery = "SELECT * FROM Story WHERE StoryId = (SELECT StoryId FROM Item WHERE ItemId = " + id + ")";
+			String recordId = executeDataQuery(recordIdQuery, "ExternalRecordId");
+			String[] recordIdSplit = recordId.split("/");
+			recordId =  "/" + recordIdSplit[recordIdSplit.length - 2] + "/" + recordIdSplit[recordIdSplit.length - 1];
+			
+			if (completionStatus.equals("4") && exported.equals("0") ) {
+	    		HttpClient httpclient = HttpClients.createDefault();
+	    		/*
+				HttpPost httppost = new HttpPost("https://fresenia.man.poznan.pl/api/transcription");
+		    	
+		        String json = "{ " + 
+		        		"	recordId: " + recordId + 
+		        		"}";
+		        HttpEntity entity = new StringEntity(json, ContentType.APPLICATION_JSON);
+		        httppost.setEntity(entity);
+		        HttpResponse response = httpclient.execute(httppost);*/
+		        
+		        // Set Exported to 1 to prevent multiple exports
+		        HttpPost httppost = new HttpPost("https://fresenia.man.poznan.pl/dev/tp-api/items/" + id);
+		    	
+				String json = "{ " + 
+		        		"	Exported: " + "b'1'" + 
+		        		"}";
+		        HttpEntity entity = new StringEntity(json, ContentType.APPLICATION_JSON);
+		        httppost.setEntity(entity);
+		        HttpResponse response = httpclient.execute(httppost);
+            }
+			
+			ResponseBuilder rBuild = Response.ok(resource);
+			//ResponseBuilder rBuild = Response.ok(query);
 	        return rBuild.build();
 	    } else {
 			ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
