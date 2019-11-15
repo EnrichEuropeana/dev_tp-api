@@ -123,6 +123,7 @@ public class StoryResponse {
 			  story.setDateStart(rs.getTimestamp("StoryDateStart"));
 			  story.setDateEnd(rs.getTimestamp("StoryDateEnd"));
 			  story.setOrderIndex(rs.getInt("StoryOrderIndex"));
+			  story.setPreviewImage(rs.getString("StoryPreviewImage"));
 			   
 			  
 				  // Iterate through Items of the Story
@@ -385,6 +386,7 @@ public class StoryResponse {
 			  story.setDateStart(rs.getTimestamp("StoryDateStart"));
 			  story.setDateEnd(rs.getTimestamp("StoryDateEnd"));
 			  story.setOrderIndex(rs.getInt("StoryOrderIndex"));
+			  story.setPreviewImage(rs.getString("StoryPreviewImage"));
 			  
 			  storyList.add(story);
 		   }
@@ -520,6 +522,7 @@ public class StoryResponse {
 					", s.DateStart as StoryDateStart" +
 					", s.DateEnd as StoryDateEnd" +
 					", s.OrderIndex as StoryOrderIndex " +
+					", s.PreviewImage as StoryPreviewImage " +
 					"FROM Story s " +
 					"WHERE 1";
 			MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
@@ -588,6 +591,7 @@ public class StoryResponse {
 					", s.DateStart as StoryDateStart" +
 					", s.DateEnd as StoryDateEnd" +
 					", s.OrderIndex as StoryOrderIndex" +
+					", s.PreviewImage as StoryPreviewImage" +
 					", group_concat(i.ItemId SEPARATOR '§~§') as ItemId" +
 					", group_concat(IFNULL(i.Title, 'NULL') SEPARATOR '§~§') as Title" +
 					", group_concat(i.CompletionStatusColorCode SEPARATOR '§~§') as CompletionStatusColorCode" +
@@ -905,6 +909,7 @@ public class StoryResponse {
 					"            s.DateStart AS StoryDateStart,\r\n" + 
 					"            s.DateEnd AS StoryDateEnd,\r\n" + 
 					"            s.OrderIndex AS StoryOrderIndex" + 
+					"            s.PreviewImage AS StoryPreviewImage" + 
 					"	FROM\r\n" + 
 					"		Story s " +
 					"	WHERE StoryId = " + id;
@@ -960,6 +965,7 @@ public class StoryResponse {
 					"            s.DateStart AS StoryDateStart,\r\n" + 
 					"            s.DateEnd AS StoryDateEnd,\r\n" + 
 					"            s.OrderIndex AS StoryOrderIndex,\r\n" + 
+					"            s.PreviewImage AS StoryPreviewImage,\r\n" + 
 					"            GROUP_CONCAT(IFNULL(i.ItemId, 'NULL')\r\n" + 
 					"                SEPARATOR '§~§') AS ItemId,\r\n" + 
 					"            GROUP_CONCAT(IFNULL(i.Title, 'NULL')\r\n" + 

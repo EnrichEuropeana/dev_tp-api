@@ -48,6 +48,7 @@ public class Story {
 	public Timestamp DateStart;
 	public Timestamp DateEnd;
 	public Integer OrderIndex;
+	public String PreviewImage;
 	public List<Item> Items;
 	public List<CompletionStatus> CompletionStatus;
 	
@@ -186,6 +187,9 @@ public class Story {
 	}
 	public void setOrderIndex(Integer orderIndex) {
 		OrderIndex = orderIndex;
+	}
+	public void setPreviewImage(String previewImage) {
+		PreviewImage = previewImage;
 	}
 	public void setCompletionStatus(List<CompletionStatus> completionStatus) {
 		CompletionStatus = completionStatus;

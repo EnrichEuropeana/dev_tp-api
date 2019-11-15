@@ -811,6 +811,8 @@ public class ProjectResponse {
 
 		    query += "ExternalRecordId, ";
 		    query += "RecordId, ";
+		    query += "ImportName, ";
+		    query += "DatasetId, ";
 			Iterator<String> keysIterator = keys.iterator();
 		    while (keysIterator.hasNext()) {
 				query += "`" + keysIterator.next() + "`";
@@ -821,6 +823,8 @@ public class ProjectResponse {
 		    query += ") VALUES (";
 		    query += "\"" + externalRecordId + "\", ";
 		    query += "\"" + recordId + "\", ";
+		    query += "\"" + queryParams.getFirst("importName") + "\", ";
+		    query += "\"" + queryParams.getFirst("datasetId") + "\", ";
 			Iterator<String> valuesIterator = values.iterator();
 		    while (valuesIterator.hasNext()) {
 				query += valuesIterator.next();
@@ -848,11 +852,30 @@ public class ProjectResponse {
 						+ ") "
 						+ "VALUES ("
 						+ "\"" + storyTitle.replace("\"", "") + " Item "  + "1" + "\"" +  ", "
-						+ "(SELECT StoryId FROM Story ORDER BY StoryId DESC LIMIT 1), "
+						+ "(SELECT StoryId FROM Story WHERE `dc:title` = " + "\"" + storyTitle.replace("\"", "") + "\" ORDER BY StoryId DESC LIMIT 1), "
 						+ "\"" + imageLink.replace("\"", "") + "\"" + ", "
 						+ "1" + ", "
 						+ "\"" + manifestUrl + "\"" + ")";
 				String itemResponse = executeInsertQuery(itemQuery, "Import");
+				
+				String storyImageQuery = "UPDATE Story SET PreviewImage = " + "\"" + imageLink.replace("\"", "\\\"") + "\"" + 
+						"WHERE\r\n" + 
+						"    StoryId = \r\n" + 
+						"	(\r\n" + 
+						"		SELECT \r\n" + 
+						"            StoryId\r\n" + 
+						"        FROM\r\n" + 
+						"        (\r\n" + 
+						"			SELECT StoryId \r\n" + 
+						"            FROM\r\n" + 
+						"				Story\r\n" + 
+						"			WHERE `dc:title` = " + "\"" + storyTitle.replace("\"", "") + "\"" +
+						"			ORDER BY StoryId DESC\r\n" + 
+						"			LIMIT 1\r\n" + 
+						"		) a\r\n" + 
+						"	)";
+				String storyImageResponse = executeInsertQuery(storyImageQuery, "Import");
+				
 				if (itemResponse == "Failed") {
 					ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
 			        return rBuild.build();
@@ -935,10 +958,31 @@ public class ProjectResponse {
 	    					for (int i = 0; i < imageCount; i++) {
 	    						imageLink = imageArray.get(i).getAsJsonObject().get("images").getAsJsonArray().get(0).getAsJsonObject().get("resource").getAsJsonObject().toString();
 
+	    						// if first item, add imageLink to story
+	    						if (i == 0) {
+	    							String storyImageQuery = "UPDATE Story SET PreviewImage = " + "\"" + imageLink.replace("\"", "\\\"") + "\"" + 
+	    														"WHERE\r\n" + 
+	    														"    StoryId = \r\n" + 
+	    														"	(\r\n" + 
+	    														"		SELECT \r\n" + 
+	    														"            StoryId\r\n" + 
+	    														"        FROM\r\n" + 
+	    														"        (\r\n" + 
+	    														"			SELECT StoryId \r\n" + 
+	    														"            FROM\r\n" + 
+	    														"				Story\r\n" + 
+	    														"			WHERE `dc:title` = " + "\"" + storyTitle.replace("\"", "") + "\"" +
+	    														"			ORDER BY StoryId DESC\r\n" + 
+	    														"			LIMIT 1\r\n" + 
+	    														"		) a\r\n" + 
+	    														"	)";
+	    							String storyImageResponse = executeInsertQuery(storyImageQuery, "Import");
+	    						}
+	    						
 	    						if (i == 0) {
 	    							itemQuery += "("
 	    							+ "\"" + storyTitle.replace("\"", "") + " Item "  + (i + 1) + "\"" +  ", "
-	    							+ "(SELECT StoryId FROM Story ORDER BY StoryId DESC LIMIT 1), "
+	    							+ "(SELECT StoryId FROM Story WHERE `dc:title` = " + "\"" + storyTitle.replace("\"", "") + "\" ORDER BY StoryId DESC LIMIT 1), "
 	    							+ "\"" + imageLink.replace("\"", "\\\"") + "\"" + ", "
 	    							+ (i + 1) + ", "
 	    							+ "\"" + manifestUrl + "\"" + ")";
@@ -946,7 +990,7 @@ public class ProjectResponse {
 	    						else {
 	    							itemQuery += ", ("
 	    									+ "\"" + storyTitle.replace("\"", "") + " Item "  + (i + 1) + "\"" +  ", "
-	    									+ "(SELECT StoryId FROM Story ORDER BY StoryId DESC LIMIT 1), "
+	    	    							+ "(SELECT StoryId FROM Story WHERE `dc:title` = " + "\"" + storyTitle.replace("\"", "") + "\" ORDER BY StoryId DESC LIMIT 1), "
 	    									+ "\"" + imageLink.replace("\"", "\\\"") + "\"" + ", "
 	    									+ (i + 1) + ", "
 	    									+ "\"" + manifestUrl + "\"" + ")";
@@ -968,6 +1012,9 @@ public class ProjectResponse {
 			query += "Update Story SET ";
 
 		    query += "ExternalRecordId = " + "\"" + recordId + "\", ";
+		    query += "RecordId = " + "\"" + recordId + "\", ";
+		    query += "ImportName = " + "\"" + queryParams.getFirst("importName") + "\", ";
+		    query += "DatasetId = " + "\"" + queryParams.getFirst("datasetId") + "\", ";
 			Iterator<String> keysIterator = keys.iterator();
 			Iterator<String> valuesIterator = values.iterator();
 		    while (keysIterator.hasNext()) {

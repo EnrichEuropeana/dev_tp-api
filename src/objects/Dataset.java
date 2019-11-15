@@ -4,6 +4,7 @@ public class Dataset {
 	public Integer DatasetId;
 	public String Name; 
 	public Integer ProjectId;
+	public String ProjectName;
 	
 	public void setDatasetId (Integer DatasetId) {
 		this.DatasetId = DatasetId;
@@ -15,5 +16,9 @@ public class Dataset {
 	
 	public void setProjectId (Integer ProjectId) {
 		this.ProjectId = ProjectId;
+	}
+	
+	public void setProjectName (String ProjectName) {
+		this.ProjectName = ProjectName;
 	}
 }

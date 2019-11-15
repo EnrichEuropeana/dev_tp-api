@@ -74,6 +74,7 @@ public class TranscriptionProfileResponse {
 			  transcriptionProfile.setItemTitle(rs.getString("ItemTitle"));
 			  transcriptionProfile.setItemImageLink(rs.getString("ItemImageLink"));
 			  transcriptionProfile.setCompletionStatus(rs.getString("CompletionStatus"));
+			  transcriptionProfile.setCompletionColorCode(rs.getString("CompletionColorCode"));
 			  transcriptionProfile.setProjectUrl(rs.getString("ProjectUrl"));
 			  
 			  //Add Scores
@@ -132,6 +133,7 @@ public class TranscriptionProfileResponse {
 				"				            i.ImageLink AS ItemImageLink,   \r\n" + 
 				"				            i.Title AS ItemTitle,   \r\n" + 
 				"				            c.Name AS CompletionStatus,   \r\n" + 
+				"				            c.ColorCode AS CompletionColorCode,   \r\n" + 
 				"				            p.Url AS ProjectUrl   \r\n" + 
 				"				    FROM   Item i  \r\n" + 
 				"				    JOIN CompletionStatus c ON i.CompletionStatusId = c.CompletionStatusId   \r\n" + 

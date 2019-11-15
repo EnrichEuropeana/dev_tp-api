@@ -11,6 +11,7 @@ public class TranscriptionProfile {
 	public String ItemImageLink;
 	public String ItemTitle;
 	public String CompletionStatus;
+	public String CompletionColorCode;
 	public String ProjectUrl;
 	public List<Score> Scores;
 	
@@ -34,6 +35,9 @@ public class TranscriptionProfile {
 	}
 	public void setCompletionStatus(String completionStatus) {
 		CompletionStatus = completionStatus;
+	}
+	public void setCompletionColorCode(String completionColorCode) {
+		CompletionColorCode = completionColorCode;
 	}
 	public void setProjectUrl(String projectUrl) {
 		ProjectUrl = projectUrl;
