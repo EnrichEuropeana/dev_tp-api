@@ -89,6 +89,7 @@ public class StoryMinimalResponse {
 			  story.setdcTitle(rs.getString("StorydcTitle"));
 			  story.setdcDescription(rs.getString("StorydcDescription"));
 			  story.setPreviewImage(rs.getString("StoryPreviewImage"));
+			  story.setDatasetName(rs.getString("DatasetName"));
 			  
 			  // Iterate through CompletionStatus of the Items
 			  List<CompletionStatus> CompletionStatusList = new ArrayList<CompletionStatus>();
@@ -152,7 +153,8 @@ public class StoryMinimalResponse {
 				"	GROUP_CONCAT(IFNULL(Count, 'NULL')) AS Amount,\r\n" + 
 				"    s.StorydcTitle as StorydcTitle,\r\n" + 
 				"    s.StoryPreviewImage as StoryPreviewImage,\r\n" + 
-				"    s.StorydcDescription as StorydcDescription\r\n" + 
+				"    s.StorydcDescription as StorydcDescription,\r\n" + 
+				"    s.DatasetName as DatasetName " + 
 				"FROM (\r\n" + 
 				"	SELECT \r\n" + 
 				"		StoryId, \r\n" + 
@@ -182,8 +184,8 @@ public class StoryMinimalResponse {
 				"JOIN \r\n" + 
 				"	(\r\n" + 
 				"	SELECT \r\n" + 
-				"		ItemId,\r\n" + 
-				"        ImageLink\r\n" + 
+				"		i.ItemId,\r\n" + 
+				"       i.ImageLink\r\n" + 
 				"	FROM Item i\r\n";
 		if (queryParams.containsKey("storyId") && queryParams.getFirst("storyId") != "") {
 			String[] values = queryParams.getFirst("storyId").split(",");
@@ -206,9 +208,11 @@ public class StoryMinimalResponse {
 				"		StoryId as StoryId,\r\n" + 
 				"		`dc:title` as StorydcTitle,\r\n" + 
 				"		PreviewImage as StoryPreviewImage,\r\n" + 
-				"		`dc:description` as StorydcDescription\r\n" + 
+				"		`dc:description` as StorydcDescription,\r\n" + 
+				"        d.Name as DatasetName" + 
 				"	FROM\r\n" + 
-				"		Story\r\n" + 
+				"		Story s\r\n\r\n" + 
+				"		LEFT JOIN Dataset d ON d.DatasetId = s.DatasetId " + 
 				"	) s ON s.StoryId = a.StoryId\r\n" + 
 				"GROUP BY StoryId " +
 				" ORDER BY StoryId DESC";
@@ -304,7 +308,8 @@ public class StoryMinimalResponse {
 				"	GROUP_CONCAT(IFNULL(Count, 'NULL')) AS Amount,\r\n" + 
 				"    s.StorydcTitle as StorydcTitle,\r\n" + 
 				"    s.StoryPreviewImage as StoryPreviewImage,\r\n" + 
-				"    s.StorydcDescription as StorydcDescription\r\n" + 
+				"    s.StorydcDescription as StorydcDescription,\r\n" + 
+				"    s.DatasetName as DatasetName\r\n" + 
 				"FROM (\r\n" + 
 				"	SELECT \r\n" + 
 				"		StoryId, \r\n" + 
@@ -358,9 +363,11 @@ public class StoryMinimalResponse {
 				"		StoryId as StoryId,\r\n" + 
 				"		`dc:title` as StorydcTitle,\r\n" + 
 				"		PreviewImage as StoryPreviewImage,\r\n" + 
-				"		`dc:description` as StorydcDescription\r\n" + 
+				"		`dc:description` as StorydcDescription,\r\n" + 
+				"        d.Name as DatasetName\r\n" + 
 				"	FROM\r\n" + 
-				"		Story\r\n" + 
+				"		Story s\r\n\r\n" + 
+				"		LEFT JOIN Dataset d ON d.DatasetId = s.DatasetId " + 
 				"	) s ON s.StoryId = a.StoryId\r\n" + 
 				"WHERE s.StoryId = " + id;
 		String resource = executeQuery(query, "Select");

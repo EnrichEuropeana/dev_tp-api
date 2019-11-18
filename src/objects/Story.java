@@ -45,6 +45,7 @@ public class Story {
 	public String Summary;
 	public Integer ParentStory;
 	public String SearchText;
+	public String DatasetName;
 	public Timestamp DateStart;
 	public Timestamp DateEnd;
 	public Integer OrderIndex;
@@ -178,6 +179,9 @@ public class Story {
 	}
 	public void setSearchText(String searchText) {
 		SearchText = searchText;
+	}
+	public void setDatasetName(String datasetName) {
+		DatasetName = datasetName;
 	}
 	public void setDateStart(Timestamp dateStart) {
 		DateStart = dateStart;
