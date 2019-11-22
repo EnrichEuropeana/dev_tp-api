@@ -9,6 +9,8 @@ public class Campaign {
 	public Timestamp Start; 
 	public Timestamp End; 
 	public String Public; 
+	public Integer DatasetId; 
+	public String DatasetName; 
 	public List<Team> Teams;
 
 	public void setCampaignId (Integer CampaignId) {
@@ -30,6 +32,14 @@ public class Campaign {
 	public void setPublic (String Public) {
 		this.Public = Public;
 	}
+	public void setDatasetId(Integer datasetId) {
+		DatasetId = datasetId;
+	}
+
+	public void setDatasetName(String datasetName) {
+		DatasetName = datasetName;
+	}
+
 	public void setTeams(List<Team> teams) {
 		Teams = teams;
 	}

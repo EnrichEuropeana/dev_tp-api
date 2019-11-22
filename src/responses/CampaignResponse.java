@@ -89,6 +89,8 @@ public class CampaignResponse {
 			  campaign.setStart(rs.getTimestamp("Start"));
 			  campaign.setEnd(rs.getTimestamp("End"));
 			  campaign.setPublic(rs.getString("Public"));
+			  campaign.setDatasetId(rs.getInt("DatasetId"));
+			  campaign.setDatasetName(rs.getString("DatasetName"));
 			  campaignList.add(campaign);
 		   }
 		
@@ -129,11 +131,15 @@ public class CampaignResponse {
 				"				    c.Start AS Start,  \r\n" + 
 				"				    c.End AS End,  \r\n" + 
 				"				    c.Public AS Public,  \r\n" + 
+				"				    d.DatasetId AS DatasetId,  \r\n" + 
+				"				    d.Name AS DatasetName,  \r\n" + 
 				"				    t.TeamId AS TeamId,  \r\n" + 
 				"				    t.Name AS TeamName,  \r\n" + 
 				"				    t.ShortName AS TeamShortName\r\n" + 
 				"				FROM  \r\n" + 
 				"				    Campaign c  \r\n" + 
+				"				        LEFT JOIN  \r\n" + 
+				"						Dataset d ON c.DatasetId = d.DatasetId " +								
 				"				        LEFT JOIN  \r\n" + 
 				"					(  \r\n" + 
 				"						SELECT   \r\n" + 
@@ -181,9 +187,10 @@ public class CampaignResponse {
 	    
 		String query = "INSERT INTO Campaign (Name, Start, End, Public) "
 						+ "VALUES ('" + campaign.Name + "'"
-							+ ", '" + campaign.Start + "'"
-							+ ", '" + campaign.End + "'"
-							+ ", " + campaign.Public + ")";
+						+ ", '" + campaign.Start + "'"
+						+ ", '" + campaign.End + "'"
+						+ ", " + campaign.DatasetId
+						+ ", " + campaign.Public + ")";
 		String resource = executeQuery(query, "Insert");
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();
@@ -203,7 +210,8 @@ public class CampaignResponse {
 	    String query = "UPDATE Campaign "
 	    				+ "SET Name = '" + changes.Name + "', "
    	    				 + "Start = '" + changes.Start + "', "
- 	    				 + "End = '" + changes.End + "', "
+  	    				 + "End = '" + changes.End + "', "
+ 	    				 + "DatasetId = " + changes.DatasetId + ", "
 	    				 + "Public = " + changes.Public;
 		query += " WHERE CampaignId = " + id;
 		String resource = executeQuery(query, "Update");
@@ -227,7 +235,38 @@ public class CampaignResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response getEntry(@PathParam("id") int id) throws SQLException {
-		String resource = executeQuery("SELECT * FROM Campaign WHERE CampaignId = " + id, "Select");
+		String query = "SELECT * FROM   \r\n" + 
+				"				(  \r\n" + 
+				"				SELECT  \r\n" + 
+				"					c.CampaignId AS CampaignId,\r\n" + 
+				"				    c.Name AS Name,  \r\n" + 
+				"				    c.Start AS Start,  \r\n" + 
+				"				    c.End AS End,  \r\n" + 
+				"				    c.Public AS Public,  \r\n" + 
+				"				    d.DatasetId AS DatasetId,  \r\n" + 
+				"				    d.Name AS DatasetName,  \r\n" + 
+				"				    t.TeamId AS TeamId,  \r\n" + 
+				"				    t.Name AS TeamName,  \r\n" + 
+				"				    t.ShortName AS TeamShortName\r\n" + 
+				"				FROM  \r\n" + 
+				"				    Campaign c  \r\n" + 
+				"				        LEFT JOIN  \r\n" + 
+				"						Dataset d ON c.DatasetId = d.DatasetId " +								
+				"				        LEFT JOIN  \r\n" + 
+				"					(  \r\n" + 
+				"						SELECT   \r\n" + 
+				"							tc.CampaignId,  \r\n" + 
+				"							group_concat(t.TeamId) as TeamId,   \r\n" + 
+				"							group_concat(t.Name) as Name,   \r\n" + 
+				"							group_concat(t.ShortName) as ShortName   \r\n" + 
+				"						FROM TeamCampaign tc   \r\n" + 
+				"							JOIN  \r\n" + 
+				"						Team t ON tc.TeamId = t.TeamId  \r\n" + 
+				"				        GROUP BY tc.CampaignId  \r\n" + 
+				"					) t ON c.CampaignId = t.CampaignId  \r\n" + 
+				"				) a   \r\n" + 
+				"				WHERE  CampaignId = " + id;
+		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();
 	}
