@@ -165,4 +165,47 @@ public class StatisticsResponse {
 		//ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
+	
+	
+	// Transcribed character amount by person
+	@Path("/personsCharacters")
+	@Produces("application/json;charset=utf-8")
+	@GET
+	public Response personCharacters(@Context UriInfo uriInfo) throws SQLException {
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		// Build base query
+		String query = "SELECT \r\n" + 
+				"	s.WP_UserId as UserId, \r\n" + 
+				"    SUM(s.TranscriptionCharacters) as Amount\r\n" + 
+				"FROM \r\n" + 
+				"(\r\n" + 
+				"	SELECT \r\n" + 
+				"       u.WP_UserId as WP_UserId,\r\n" + 
+				"		CASE WHEN st.Name = \"Transcription\" THEN Amount ELSE 0 END TranscriptionCharacters,\r\n" + 
+				"        s.Timestamp as Timestamp\r\n" + 
+				"	From Score s\r\n" + 
+				"	JOIN ScoreType st On s.ScoreTypeId = st.ScoreTypeId\r\n" + 
+				"	JOIN User u ON s.UserId = u.UserId  \r\n" + 
+				"	JOIN Item i ON s.ItemId = i.ItemId \r\n" + 
+				"	JOIN Story story ON i.StoryId = story.StoryId  \r\n" + 
+				"	JOIN Campaign c ON story.DatasetId = c.DatasetId ";
+		if (queryParams.containsKey("campaign")) {
+			query +=  " WHERE c.CampaignId = " + queryParams.getFirst("campaign") + " AND s.Timestamp >= c.Start AND s.Timestamp <= c.End ";
+			if (queryParams.containsKey("person")) {
+				query +=  " AND u.WP_UserId = " + queryParams.getFirst("person");
+			}
+		}
+		else {
+			if (queryParams.containsKey("person")) {
+				query +=  " WHERE u.WP_UserId = " + queryParams.getFirst("person");
+			}
+		}
+		
+		query +=		" ) s \r\n";
+		String result = executeNumberQuery(query, "Select");
+
+		ResponseBuilder rBuild = Response.ok(result);
+		//ResponseBuilder rBuild = Response.ok(query);
+        return rBuild.build();
+	}
 }
