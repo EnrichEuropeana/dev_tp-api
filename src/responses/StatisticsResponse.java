@@ -119,6 +119,31 @@ public class StatisticsResponse {
         return rBuild.build();
 	}
 	
+	// Total items
+	@Path("/itemsStarted")
+	@Produces("application/json;charset=utf-8")
+	@GET
+	public Response itemsStarted(@Context UriInfo uriInfo) throws SQLException {
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		String query = "SELECT count(DISTINCT(i.ItemId)) as Amount "
+				+ "FROM Item i "
+				+ "JOIN StatusChanges sc ON i.ItemId = sc.ItemId "
+				+ "JOIN Story s ON i.StoryId = s.StoryId "
+				+ "WHERE CompletionStatusId != 1";
+
+		if (queryParams.containsKey("campaign")) {
+			query +=  " AND sc.Timestamp >= (SELECT Start FROM Campaign WHERE CampaignId = " + queryParams.getFirst("campaign") + ")";
+			query +=  " AND sc.Timestamp <= (SELECT End FROM Campaign WHERE CampaignId = " + queryParams.getFirst("campaign") + ")";
+			query +=  " AND (s.DatasetId = (SELECT DatasetId FROM Campaign WHERE CampaignId = " + queryParams.getFirst("campaign") + ")"
+					+ " OR (SELECT DatasetId FROM Campaign WHERE CampaignId = " + queryParams.getFirst("campaign") + ") is null)";
+		}
+		String result = executeNumberQuery(query, "Select");
+
+		//ResponseBuilder rBuild = Response.ok(result);
+		ResponseBuilder rBuild = Response.ok(query);
+        return rBuild.build();
+	}
+
 	
 	// Transcribed character amount by team
 	@Path("/teamsCharacters")
