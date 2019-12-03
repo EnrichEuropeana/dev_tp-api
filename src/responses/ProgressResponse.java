@@ -103,12 +103,46 @@ public class ProgressResponse {
 	@Path("transcribedcharacters")
 	@Produces("application/json;charset=utf-8")
 	@GET
-	public Response search(@Context UriInfo uriInfo) throws SQLException {
+	public Response getTranscribedCharacters(@Context UriInfo uriInfo) throws SQLException {
 		String query = "SELECT \r\n" + 
 				"YEAR(Timestamp) as Year,\r\n" + 
 				"MONTH(Timestamp) as Month,\r\n" + 
 				"SUM(Amount) as Amount\r\n" + 
-				"FROM transcribathon_dev.Score\r\n" + 
+				"FROM Score\r\n" + 
+				"GROUP BY YEAR(Timestamp), MONTH(Timestamp)";
+		String resource = executeQuery(query, "Select");
+		ResponseBuilder rBuild = Response.ok(resource);
+        return rBuild.build();
+	}
+
+	//Get entries
+	@Path("documentsstarted")
+	@Produces("application/json;charset=utf-8")
+	@GET
+	public Response getDocumentsStarted(@Context UriInfo uriInfo) throws SQLException {
+		String query = "SELECT \r\n" + 
+				"YEAR(Timestamp) as Year,\r\n" + 
+				"MONTH(Timestamp) as Month,\r\n" + 
+				"count(*) as Amount\r\n" + 
+				"FROM Score s\r\n" +
+				"JOIN (SELECT ItemId FROM Item i WHERE CompletionStatusId != 1) i ON s.ItemId = i.ItemId " +
+				"GROUP BY YEAR(Timestamp), MONTH(Timestamp)";
+		String resource = executeQuery(query, "Select");
+		ResponseBuilder rBuild = Response.ok(resource);
+        return rBuild.build();
+	}
+
+	//Get entries
+	@Path("documentscompleted")
+	@Produces("application/json;charset=utf-8")
+	@GET
+	public Response getDocumentsCompleted(@Context UriInfo uriInfo) throws SQLException {
+		String query = "SELECT \r\n" + 
+				"YEAR(Timestamp) as Year,\r\n" + 
+				"MONTH(Timestamp) as Month,\r\n" + 
+				"count(*) as Amount\r\n" + 
+				"FROM Score s\r\n" +
+				"JOIN (SELECT ItemId FROM Item i WHERE CompletionStatusId = 4) i ON s.ItemId = i.ItemId " +
 				"GROUP BY YEAR(Timestamp), MONTH(Timestamp)";
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
