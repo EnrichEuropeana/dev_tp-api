@@ -9,6 +9,10 @@ public class Property {
 	public Integer MotivationId;
 	public String Motivation;
 	public String Editable;
+	public Integer X_Coord;
+	public Integer Y_Coord;
+	public Integer Width;
+	public Integer Height;
 	
 	public void setPropertyId(Integer propertyId) {
 		PropertyId = propertyId;
@@ -33,5 +37,17 @@ public class Property {
 	}
 	public void setEditable(String editable) {
 		Editable = editable;
+	}
+	public void setX_Coord(Integer x_Coord) {
+		X_Coord = x_Coord;
+	}
+	public void setY_Coord(Integer y_Coord) {
+		Y_Coord = y_Coord;
+	}
+	public void setWidth(Integer width) {
+		Width = width;
+	}
+	public void setHeight(Integer height) {
+		Height = height;
 	}
 }

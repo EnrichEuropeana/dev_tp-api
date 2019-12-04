@@ -243,7 +243,7 @@ public class AnnotationExportResponse {
 				"        LEFT JOIN " + 
 				"    Story s ON s.StoryId = i.StoryId " + 
 				"WHERE " + 
-				"    CurrentVersion = 1) "
+				"    CurrentVersion = 1 AND NoText = 0) "
 				+ ") a WHERE 1";
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		

@@ -86,6 +86,18 @@ public class PropertyResponse {
 			  property.setMotivationId(rs.getInt("MotivationId"));
 			  property.setMotivation(rs.getString("Motivation"));
 			  property.setEditable(rs.getString("Editable"));
+			  if (rs.getString("X_Coord") != null) {
+				  property.setX_Coord(rs.getInt("X_Coord"));
+			  }
+			  if (rs.getString("Y_Coord") != null) {
+				  property.setY_Coord(rs.getInt("Y_Coord"));
+			  }
+			  if (rs.getString("Width") != null) {
+				  property.setWidth(rs.getInt("Width"));
+			  }
+			  if (rs.getString("Height") != null) {
+				  property.setX_Coord(rs.getInt("Height"));
+			  }
 			  propertyList.add(property);
 		   }
 		
@@ -127,7 +139,11 @@ public class PropertyResponse {
 				"    pt.Name as PropertyType,\r\n" + 
 				"    m.MotivationId as MotivationId,\r\n" + 
 				"    m.Name as Motivation,\r\n" + 
-				"    pt.Editable as Editable\r\n" + 
+				"    pt.Editable as Editable,\r\n" + 
+				"	p.X_Coord as X_Coord,\r\n" + 
+				"	p.Y_Coord as Y_Coord,\r\n" + 
+				"	p.Width as Width,\r\n" + 
+				"	p.Height as Height\r\n" + 
 				"FROM Property p\r\n" + 
 				"JOIN PropertyType pt\r\n" + 
 				"ON p.PropertyTypeId = pt.PropertyTypeId\r\n" + 
@@ -178,10 +194,34 @@ public class PropertyResponse {
 
 				// Add property
 				String propertyInsert = "";
-				propertyInsert += "INSERT INTO Property (Value, Description, PropertyTypeId) "
+				propertyInsert += "INSERT INTO Property (Value, Description, X_Coord, Y_Coord, Width, Height, PropertyTypeId) "
 							+ "VALUES ('" + property.PropertyValue + "'";
 				if(property.PropertyDescription != null && !property.PropertyDescription.equals("")) {
 					propertyInsert += ",'" + property.PropertyDescription + "'";
+				}
+				else {
+					propertyInsert += ",null";
+				}
+				if(property.X_Coord != null && !property.X_Coord.equals("")) {
+					propertyInsert += ",'" + property.X_Coord + "'";
+				}
+				else {
+					propertyInsert += ",null";
+				}
+				if(property.Y_Coord != null && !property.Y_Coord.equals("")) {
+					propertyInsert += ",'" + property.Y_Coord + "'";
+				}
+				else {
+					propertyInsert += ",null";
+				}
+				if(property.Width != null && !property.Width.equals("")) {
+					propertyInsert += ",'" + property.Width + "'";
+				}
+				else {
+					propertyInsert += ",null";
+				}
+				if(property.Height != null && !property.Height.equals("")) {
+					propertyInsert += ",'" + property.Height + "'";
 				}
 				else {
 					propertyInsert += ",null";
