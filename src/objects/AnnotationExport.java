@@ -1,6 +1,7 @@
 package objects;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 public class AnnotationExport {
 	public Integer EuropeanaAnnotationId;
@@ -18,6 +19,9 @@ public class AnnotationExport {
 	public Integer TranscribathonStoryId;
 	public String StoryUrl;
 	public String StoryId;
+	public String ImageLink;
+	public List<Language> Languages;
+	
 	
 	public void setEuropeanaAnnotationId(Integer europeanaAnnotationId) {
 		EuropeanaAnnotationId = europeanaAnnotationId;
@@ -63,5 +67,11 @@ public class AnnotationExport {
 	}
 	public void setStoryId(String storyId) {
 		StoryId = storyId;
+	}
+	public void setImageLink(String imageLink) {
+		ImageLink = imageLink;
+	}
+	public void setLanguages(List<Language> languages) {
+		Languages = languages;
 	}
 }

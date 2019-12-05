@@ -16,6 +16,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 
 import objects.AnnotationExport;
 import objects.ApiKey;
+import objects.Language;
 import objects.Person;
 
 import java.util.*;
@@ -87,6 +88,24 @@ public class AnnotationExportResponse {
 			  annotationExport.setTranscribathonStoryId(rs.getInt("TranscribathonStoryId"));
 			  annotationExport.setStoryUrl(rs.getString("StoryUrl"));
 			  annotationExport.setStoryId(rs.getString("StoryId"));
+
+              JsonObject image = new JsonParser().parse(rs.getString("ImageLink")).getAsJsonObject();
+			  annotationExport.setImageLink(image.get("@id").toString().replace("\"", ""));
+			  
+			  // Add Languages
+			  List<Language> LanguageList = new ArrayList<Language>();
+			  if (rs.getString("LanguageName") != null) {
+				  String[] LanguageNames = rs.getString("LanguageName").split(",");
+				  String[] LanguageCodes = rs.getString("LanguageCode").split(",");
+				  for (int i = 0; i < LanguageNames.length; i++) {
+					  Language language = new Language();
+					  language.setName(LanguageNames[i]);
+					  language.setCode(LanguageCodes[i]);
+					  LanguageList.add(language);
+				  }
+			  }
+			  annotationExport.setLanguages(LanguageList);
+			  
 			  annotationExports.add(annotationExport);
 		   }
 		
@@ -190,61 +209,72 @@ public class AnnotationExportResponse {
 			return authResponse.build();
 		}
 		
-		String query = "SELECT * FROM (" + 
-				"(SELECT  " + 
-				"	 a.AnnotationId, " +
-				"    a.Text, " + 
-				"    a.TextNoTags, " + 
-				"    a.Timestamp, " + 
-				"    a.X_Coord, " + 
-				"    a.Y_Coord, " + 
-				"    a.Width, " + 
-				"    a.Height, " + 
-				"    a.EuropeanaAnnotationId, " + 
-				"    m.Name AS Motivation, " + 
-				"    i.ProjectItemId as ItemId, " + 
-				"    i.OrderIndex as OrderIndex, " + 
-				"    i.ItemId as TranscribathonItemId, " + 
-				"    s.StoryId as TranscribathonStoryId, " + 
-				"    s.`edm:landingPage` as StoryUrl, " + 
-				"    s.RecordId as StoryId " + 
-				"FROM " + 
-				"    Annotation a " + 
-				"        LEFT JOIN " + 
-				"    AnnotationType at ON a.AnnotationTypeId = at.AnnotationTypeId " + 
-				"        LEFT JOIN " + 
-				"    Motivation m ON at.MotivationId = m.MotivationId " + 
-				"        LEFT JOIN " + 
-				"    Item i ON i.ItemId = a.ItemId " + 
-				"        LEFT JOIN " + 
-				"    Story s ON s.StoryId = i.StoryId)  " + 
-				"UNION ( " + 
-				"	SELECT  " + 
-				"	 t.TranscriptionId, " +
-				"    t.Text, " + 
-				"    t.TextNoTags, " + 
-				"    t.Timestamp, " + 
-				"    t.EuropeanaAnnotationId, " + 
-				"    0 AS X_Coord, " + 
-				"    0 AS Y_Coord, " + 
-				"    0 AS Width, " + 
-				"    0 AS Height, " + 
-				"    'transcribing' AS Motivation, " + 
-				"    i.ProjectItemId, " +  
-				"    i.OrderIndex, " + 
-				"    i.ItemId, " + 
-				"    s.StoryId, " + 
-				"    s.`edm:landingPage`, " + 
-				"    s.RecordId " + 
-				"FROM " + 
-				"    Transcription t " + 
-				"        LEFT JOIN " + 
-				"    Item i ON i.ItemId = t.ItemId " + 
-				"        LEFT JOIN " + 
-				"    Story s ON s.StoryId = i.StoryId " + 
-				"WHERE " + 
-				"    CurrentVersion = 1 AND NoText = 0) "
-				+ ") a WHERE 1";
+		String query = "SELECT \r\n" + 
+				"    *\r\n" + 
+				"FROM\r\n" + 
+				"    ((SELECT \r\n" + 
+				"        a.AnnotationId,\r\n" + 
+				"            a.Text,\r\n" + 
+				"            a.TextNoTags,\r\n" + 
+				"            a.Timestamp,\r\n" + 
+				"            a.X_Coord,\r\n" + 
+				"            a.Y_Coord,\r\n" + 
+				"            a.Width,\r\n" + 
+				"            a.Height,\r\n" + 
+				"            a.EuropeanaAnnotationId,\r\n" + 
+				"            m.Name AS Motivation,\r\n" + 
+				"            i.ProjectItemId AS ItemId,\r\n" + 
+				"            i.OrderIndex AS OrderIndex,\r\n" + 
+				"            i.ItemId AS TranscribathonItemId,\r\n" + 
+				"            i.ImageLink AS ImageLink,\r\n" + 
+				"            s.StoryId AS TranscribathonStoryId,\r\n" + 
+				"            s.`edm:landingPage` AS StoryUrl,\r\n" + 
+				"            s.RecordId AS StoryId,\r\n" + 
+				"            null AS LanguageCode,\r\n" + 
+				"            null AS LanguageName\r\n" + 
+				"    FROM\r\n" + 
+				"        Annotation a\r\n" + 
+				"    LEFT JOIN AnnotationType at ON a.AnnotationTypeId = at.AnnotationTypeId\r\n" + 
+				"    LEFT JOIN Motivation m ON at.MotivationId = m.MotivationId\r\n" + 
+				"    LEFT JOIN Item i ON i.ItemId = a.ItemId\r\n" + 
+				"    LEFT JOIN Story s ON s.StoryId = i.StoryId) UNION (SELECT \r\n" + 
+				"        t.TranscriptionId,\r\n" + 
+				"            t.Text,\r\n" + 
+				"            t.TextNoTags,\r\n" + 
+				"            t.Timestamp,\r\n" + 
+				"            t.EuropeanaAnnotationId,\r\n" + 
+				"            0 AS X_Coord,\r\n" + 
+				"            0 AS Y_Coord,\r\n" + 
+				"            0 AS Width,\r\n" + 
+				"            0 AS Height,\r\n" + 
+				"            'transcribing' AS Motivation,\r\n" + 
+				"            i.ProjectItemId,\r\n" + 
+				"            i.OrderIndex,\r\n" + 
+				"            i.ItemId,\r\n" + 
+				"            i.ImageLink,\r\n" + 
+				"            s.StoryId,\r\n" + 
+				"            s.`edm:landingPage`,\r\n" + 
+				"            s.RecordId,\r\n" + 
+				"            a.LanguageCode,\r\n" + 
+				"            a.LanguageName\r\n" + 
+				"    FROM\r\n" + 
+				"        Transcription t\r\n" + 
+				"    LEFT JOIN Item i ON i.ItemId = t.ItemId\r\n" + 
+				"    LEFT JOIN Story s ON s.StoryId = i.StoryId\r\n" + 
+				"    LEFT JOIN \r\n" + 
+				"		(\r\n" + 
+				"			SELECT \r\n" + 
+				"				t.TranscriptionId, "
+				+ "			GROUP_CONCAT(l.Code) LanguageCode,\r\n"
+				+ "			GROUP_CONCAT(l.Name) LanguageName\r\n" + 
+				"			FROM Transcription t\r\n" + 
+				"            JOIN TranscriptionLanguage tl ON t.TranscriptionId = tl.TranscriptionId\r\n" + 
+				"            JOIN Language l ON tl.LanguageId = l.LanguageId\r\n" + 
+				"            GROUP BY TranscriptionId\r\n" + 
+				"		) a ON a.TranscriptionId = t.TranscriptionId\r\n" + 
+				"    WHERE\r\n" + 
+				"        CurrentVersion = 1 AND NoText = 0)) a\r\n" + 
+				"WHERE 1";
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		
 		for(String key : queryParams.keySet()){
