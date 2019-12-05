@@ -216,6 +216,12 @@ public class StoryMinimalResponse {
 				"	) s ON s.StoryId = a.StoryId\r\n" + 
 				"GROUP BY StoryId " +
 				" ORDER BY StoryId DESC";
+		if (queryParams.containsKey("limit")) {
+			query +=  " LIMIT " + queryParams.getFirst("limit");
+		}
+		if (queryParams.containsKey("offset")) {
+			query +=  " OFFSET " + queryParams.getFirst("offset");
+		}
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
 		//ResponseBuilder rBuild = Response.ok(query);
