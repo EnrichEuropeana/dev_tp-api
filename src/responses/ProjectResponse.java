@@ -521,8 +521,7 @@ public class ProjectResponse {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-	   //return "query couldn't be executed";
-		return query;
+	   return "Failed";
 	}
 	
 	//Get entry by id
@@ -824,7 +823,7 @@ public class ProjectResponse {
 		    query += "\"" + externalRecordId + "\", ";
 		    query += "\"" + recordId + "\", ";
 		    query += "\"" + queryParams.getFirst("importName") + "\", ";
-		    query += "\"" + queryParams.getFirst("datasetId") + "\", ";
+		    query += queryParams.getFirst("datasetId") + ", ";
 			Iterator<String> valuesIterator = values.iterator();
 		    while (valuesIterator.hasNext()) {
 				query += valuesIterator.next();
@@ -1014,7 +1013,7 @@ public class ProjectResponse {
 		    query += "ExternalRecordId = " + "\"" + recordId + "\", ";
 		    query += "RecordId = " + "\"" + recordId + "\", ";
 		    query += "ImportName = " + "\"" + queryParams.getFirst("importName") + "\", ";
-		    query += "DatasetId = " + "\"" + queryParams.getFirst("datasetId") + "\", ";
+		    query += "DatasetId = " + queryParams.getFirst("datasetId") + ", ";
 			Iterator<String> keysIterator = keys.iterator();
 			Iterator<String> valuesIterator = values.iterator();
 		    while (keysIterator.hasNext()) {

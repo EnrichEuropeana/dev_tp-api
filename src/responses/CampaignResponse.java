@@ -185,7 +185,7 @@ public class CampaignResponse {
 	    Gson gson = gsonBuilder.create();
 	    Campaign campaign = gson.fromJson(body, Campaign.class);
 	    
-		String query = "INSERT INTO Campaign (Name, Start, End, Public) "
+		String query = "INSERT INTO Campaign (Name, Start, End, DatasetId, Public) "
 						+ "VALUES ('" + campaign.Name + "'"
 						+ ", '" + campaign.Start + "'"
 						+ ", '" + campaign.End + "'"
@@ -193,6 +193,7 @@ public class CampaignResponse {
 						+ ", " + campaign.Public + ")";
 		String resource = executeQuery(query, "Insert");
 		ResponseBuilder rBuild = Response.ok(resource);
+		//ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
 	
@@ -206,7 +207,6 @@ public class CampaignResponse {
 	    Campaign changes = gson.fromJson(body, Campaign.class);
 	    
 	    
-	    //Check if NOT NULL field is attempted to be changed to NULL
 	    String query = "UPDATE Campaign "
 	    				+ "SET Name = '" + changes.Name + "', "
    	    				 + "Start = '" + changes.Start + "', "

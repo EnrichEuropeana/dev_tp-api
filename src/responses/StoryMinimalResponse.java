@@ -88,6 +88,7 @@ public class StoryMinimalResponse {
 			  story.setStoryId(rs.getInt("StoryId")); 
 			  story.setdcTitle(rs.getString("StorydcTitle"));
 			  story.setdcDescription(rs.getString("StorydcDescription"));
+			  story.setdcLanguage(rs.getString("StorydcLanguage"));
 			  story.setPreviewImage(rs.getString("StoryPreviewImage"));
 			  story.setDatasetName(rs.getString("DatasetName"));
 			  
@@ -154,7 +155,9 @@ public class StoryMinimalResponse {
 				"    s.StorydcTitle as StorydcTitle,\r\n" + 
 				"    s.StoryPreviewImage as StoryPreviewImage,\r\n" + 
 				"    s.StorydcDescription as StorydcDescription,\r\n" + 
-				"    s.DatasetName as DatasetName " + 
+				"    s.StorydcLanguage as StorydcLanguage,\r\n" + 
+				"    s.DatasetName as DatasetName,\r\n" + 
+				"    s.DatasetId as DatasetId " + 
 				"FROM (\r\n" + 
 				"	SELECT \r\n" + 
 				"		StoryId, \r\n" + 
@@ -209,12 +212,33 @@ public class StoryMinimalResponse {
 				"		`dc:title` as StorydcTitle,\r\n" + 
 				"		PreviewImage as StoryPreviewImage,\r\n" + 
 				"		`dc:description` as StorydcDescription,\r\n" + 
-				"        d.Name as DatasetName" + 
+				"		`dc:language` as StorydcLanguage,\r\n" + 
+				"        d.Name as DatasetName,\r\n" + 
+				"        d.DatasetId as DatasetId" + 
 				"	FROM\r\n" + 
 				"		Story s\r\n\r\n" + 
 				"		LEFT JOIN Dataset d ON d.DatasetId = s.DatasetId " + 
 				"	) s ON s.StoryId = a.StoryId\r\n" + 
-				"GROUP BY StoryId " +
+				"   WHERE 1 ";
+
+		for(String key : queryParams.keySet()){
+			if (!key.contentEquals("storyId") && !key.contentEquals("limit") && !key.contentEquals("offset")) {
+				String[] values = queryParams.getFirst(key).split(",");
+				query += " AND (";
+			    int valueCount = values.length;
+			    int i = 1;
+			    for(String value : values) {
+			    	query += key + " = '" + value + "'";
+				    if (i < valueCount) {
+				    	query += " OR ";
+				    }
+				    i++;
+			    }
+			    query += ")";
+			}
+		}
+
+		query += " GROUP BY StoryId " +
 				" ORDER BY StoryId DESC";
 		if (queryParams.containsKey("limit")) {
 			query +=  " LIMIT " + queryParams.getFirst("limit");
