@@ -220,9 +220,54 @@ public class StoryMinimalResponse {
 				"		LEFT JOIN Dataset d ON d.DatasetId = s.DatasetId " + 
 				"	) s ON s.StoryId = a.StoryId\r\n" + 
 				"   WHERE 1 ";
-
+		if (queryParams.containsKey("DatasetId") && queryParams.getFirst("DatasetId") != "") {
+			String[] values = queryParams.getFirst("DatasetId").split(",");
+			query += " AND (";
+		    int valueCount = values.length;
+		    int i = 1;
+		    for(String value : values) {
+		    	query += "DatasetId = " + value;
+			    if (i < valueCount) {
+			    	query += " OR ";
+			    }
+			    i++;
+		    }
+			if (queryParams.containsKey("StorydcLanguage") && queryParams.getFirst("StorydcLanguage") != "" && queryParams.containsKey("AndOr") && queryParams.getFirst("AndOr").contentEquals("OR")) {
+				values = queryParams.getFirst("StorydcLanguage").split(",");
+				query += " OR ";
+			    valueCount = values.length;
+			    i = 1;
+			    for(String value : values) {
+			    	query += "StorydcLanguage = '" + value + "'";
+				    if (i < valueCount) {
+				    	query += " OR ";
+				    }
+				    i++;
+			    }
+			    query += ") ";
+			}
+			else {
+				query += ") ";
+			}
+		}
+		if (queryParams.containsKey("StorydcLanguage") && queryParams.getFirst("StorydcLanguage") != "") {
+			String[] values = queryParams.getFirst("StorydcLanguage").split(",");
+			query += " AND (";
+		    int valueCount = values.length;
+		    int i = 1;
+		    for(String value : values) {
+		    	query += "StorydcLanguage = '" + value + "'";
+			    if (i < valueCount) {
+			    	query += " OR ";
+			    }
+			    i++;
+		    }
+		    query += ") ";
+		}
+	    
 		for(String key : queryParams.keySet()){
-			if (!key.contentEquals("storyId") && !key.contentEquals("limit") && !key.contentEquals("offset")) {
+			if (!key.contentEquals("storyId") && !key.contentEquals("limit") && !key.contentEquals("offset") 
+					&& !key.contentEquals("StorydcLanguage") && !key.contentEquals("DatasetId") && !key.contentEquals("AndOr")) {
 				String[] values = queryParams.getFirst(key).split(",");
 				query += " AND (";
 			    int valueCount = values.length;
