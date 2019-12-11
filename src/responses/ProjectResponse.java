@@ -798,7 +798,7 @@ public class ProjectResponse {
 		keys.add("ProjectId");
 		values.add("" + projectId);
 		
-		String checkQuery = "SELECT * FROM Story WHERE ExternalRecordId = '" + recordId + "'";
+		String checkQuery = "SELECT * FROM Story WHERE RecordId = '" + recordId + "'";
 		Integer checkQueryResult = executeStoryQuery(checkQuery, "Select");
 		
 		String query = "";
