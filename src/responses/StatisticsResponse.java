@@ -127,9 +127,9 @@ public class StatisticsResponse {
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		String query = "SELECT count(DISTINCT(i.ItemId)) as Amount "
 				+ "FROM Item i "
-				+ "JOIN StatusChanges sc ON i.ItemId = sc.ItemId "
+				+ "JOIN Score sc ON i.ItemId = sc.ItemId "
 				+ "JOIN Story s ON i.StoryId = s.StoryId "
-				+ "WHERE CompletionStatusId != 1";
+				+ "WHERE s.CompletionStatusId != 1";
 
 		if (queryParams.containsKey("campaign")) {
 			query +=  " AND sc.Timestamp >= (SELECT Start FROM Campaign WHERE CampaignId = " + queryParams.getFirst("campaign") + ")";
@@ -139,8 +139,8 @@ public class StatisticsResponse {
 		}
 		String result = executeNumberQuery(query, "Select");
 
-		//ResponseBuilder rBuild = Response.ok(result);
-		ResponseBuilder rBuild = Response.ok(query);
+		ResponseBuilder rBuild = Response.ok(result);
+		//ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
 
