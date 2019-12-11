@@ -137,6 +137,9 @@ public class StatisticsResponse {
 			query +=  " AND (s.DatasetId = (SELECT DatasetId FROM Campaign WHERE CampaignId = " + queryParams.getFirst("campaign") + ")"
 					+ " OR (SELECT DatasetId FROM Campaign WHERE CampaignId = " + queryParams.getFirst("campaign") + ") is null)";
 		}
+		else if (queryParams.containsKey("dataset")) {
+			query +=  " AND (s.DatasetId = " + queryParams.getFirst("dataset") + ")";
+		}
 		String result = executeNumberQuery(query, "Select");
 
 		ResponseBuilder rBuild = Response.ok(result);
