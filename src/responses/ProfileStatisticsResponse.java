@@ -122,7 +122,7 @@ public class ProfileStatisticsResponse {
 		    int keyCount = changes.entrySet().size();
 		    int i = 1;
 			for(Map.Entry<String, JsonElement> entry : changes.entrySet()) {
-			    query += entry.getKey() + " = " + entry.getValue();
+			    query += entry.getKey() + " = '" + changes.get(entry.getKey()).getAsString() + "'";
 			    if (i < keyCount) {
 			    	query += ", ";
 			    }

@@ -927,7 +927,7 @@ public class ItemResponse {
 		    int keyCount = changes.entrySet().size();
 		    int i = 1;
 			for(Map.Entry<String, JsonElement> entry : changes.entrySet()) {
-			    query += entry.getKey() + " = " + entry.getValue();
+			    query += entry.getKey() + " = '" + changes.get(entry.getKey()).getAsString() + "'";
 			    if (i < keyCount) {
 			    	query += ", ";
 			    }
@@ -968,8 +968,8 @@ public class ItemResponse {
 		        HttpResponse response = httpclient.execute(httppost);
             }
 			
-			ResponseBuilder rBuild = Response.ok(resource);
-			//ResponseBuilder rBuild = Response.ok(query);
+			//ResponseBuilder rBuild = Response.ok(resource);
+			ResponseBuilder rBuild = Response.ok(query);
 	        return rBuild.build();
 	    } else {
 			ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
