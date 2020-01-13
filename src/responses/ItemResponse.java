@@ -1159,6 +1159,7 @@ public class ItemResponse {
 					"			Property p ON ip.PropertyId = p.PropertyId\r\n" + 
 					"				LEFT JOIN\r\n" + 
 					"			PropertyType pt ON p.PropertyTypeId = pt.PropertyTypeId\r\n" + 
+					"		WHERE ip.ItemId = " + id +
 					"		GROUP BY ip.ItemId\r\n" + 
 					"	) prop \r\n" + 
 					"		ON prop.ItemId = i.ItemId\r\n" + 
@@ -1175,7 +1176,8 @@ public class ItemResponse {
 					"			GROUP_CONCAT(c.Timestamp\r\n" + 
 					"				SEPARATOR '&~&') AS CommentTimestamp\r\n" + 
 					"		FROM\r\n" + 
-					"			Comment c\r\n" + 
+					"			Comment c\r\n" +
+					"		WHERE ItemId = " + id + 
 					"		GROUP BY c.ItemId\r\n" + 
 					"	) comments ON comments.ItemId = i.ItemId \r\n" + 
 					"        LEFT JOIN\r\n" + 
@@ -1206,6 +1208,7 @@ public class ItemResponse {
 					"				SEPARATOR '&~&') AS PlaceWikidataId\r\n" + 
 					"		FROM\r\n" + 
 					"			Place pl\r\n" + 
+					"		WHERE ItemId = " + id +
 					"		GROUP BY pl.ItemId\r\n" + 
 					"	) place ON place.ItemId = i.ItemId\r\n" + 
 					"        LEFT JOIN\r\n" + 
@@ -1241,6 +1244,7 @@ public class ItemResponse {
 					"        		*\r\n" + 
 					"    		FROM\r\n" + 
 					"        		Transcription t\r\n" + 
+					"			WHERE ItemId = " + id +
 					"		) t\r\n" + 
 					"        LEFT JOIN\r\n" + 
 					"    	(SELECT \r\n" + 
@@ -1288,6 +1292,7 @@ public class ItemResponse {
 					"			Annotation a\r\n" + 
 					"				LEFT JOIN\r\n" + 
 					"			AnnotationType at ON a.AnnotationTypeId = at.AnnotationTypeId\r\n" + 
+					"		WHERE ItemId = " + id +
 					"		GROUP BY a.ItemId\r\n" + 
 					"	) annot ON annot.ItemId = i.ItemId\r\n" + 
 					"        LEFT JOIN\r\n" + 
@@ -1314,6 +1319,7 @@ public class ItemResponse {
 					"				SEPARATOR '&~&') AS PersonDescription\r\n" + 
 					"		FROM\r\n" + 
 					"			Person pe\r\n" + 
+					"		WHERE ItemId = " + id +
 					"		GROUP BY pe.ItemId\r\n" + 
 					"	) person ON person.ItemId = i.ItemId\r\n" + 
 					"				LEFT JOIN\r\n" + 

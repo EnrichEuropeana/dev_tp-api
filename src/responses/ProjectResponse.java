@@ -576,6 +576,8 @@ public class ProjectResponse {
 		fields.add("dc:rights");
 		fields.add("dc:language");
 		fields.add("edm:language");
+		fields.add("dcterms:provenance");
+		fields.add("dc:identifier");
 		boolean placeAdded = false;
 	    int keyCount = dataArray.size();
 
