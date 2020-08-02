@@ -1481,6 +1481,7 @@ public class ItemResponse {
 					"        		*\r\n" + 
 					"    		FROM\r\n" + 
 					"        		Transcription t\r\n" + 
+					"			WHERE ItemId = " + id +
 					"		) t\r\n" + 
 					"        LEFT JOIN\r\n" + 
 					"    	(SELECT \r\n" + 
