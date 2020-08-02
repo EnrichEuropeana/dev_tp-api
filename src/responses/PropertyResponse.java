@@ -27,8 +27,11 @@ import com.google.gson.*;
 public class PropertyResponse {
 
 
-	public String executeQuery(String query, String type) throws SQLException{
+	public static String executeQuery(String query, String type) throws SQLException{
 		   List<Property> propertyList = new ArrayList<Property>();
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
@@ -44,18 +47,25 @@ public class PropertyResponse {
 				Class.forName("com.mysql.jdbc.Driver");
 				
 				   // Open a connection
-				   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+				   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 				   // Execute SQL query
-				   Statement stmt = conn.createStatement();
+				   stmt = conn.createStatement();
 		   try {
 		   if (type != "Select") {
 			   if (type == "PropertyId") {
-				   ResultSet rs = stmt.executeQuery(query);
+				   rs = stmt.executeQuery(query);
 				   if(rs.next() == false){
+					   rs.close();
+					   stmt.close();
+					   conn.close();
 					   return "";
 				   }
 				   else {
-					   return rs.getString("PropertyId");
+					   String propertyId = rs.getString("PropertyId");
+					   rs.close();
+					   stmt.close();
+					   conn.close();
+					   return propertyId;
 				   }
 			   }
 			   else {
@@ -72,7 +82,7 @@ public class PropertyResponse {
 				   }
 			   }
 		   }
-		   ResultSet rs = stmt.executeQuery(query);
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -80,11 +90,21 @@ public class PropertyResponse {
 			  Property property = new Property();
 			  property.setPropertyId(rs.getInt("PropertyId"));
 			  property.setPropertyValue(rs.getString("PropertyValue"));
-			  property.setPropertyDescription(rs.getString("PropertyDescription"));
-			  property.setPropertyTypeId(rs.getInt("PropertyTypeId"));
-			  property.setPropertyType(rs.getString("PropertyType"));
-			  property.setMotivationId(rs.getInt("MotivationId"));
-			  property.setMotivation(rs.getString("Motivation"));
+			  if (rs.getString("PropertyDescription") != null) {
+				  property.setPropertyDescription(rs.getString("PropertyDescription"));
+			  }
+			  if (rs.getString("PropertyTypeId") != null) {
+				  property.setPropertyTypeId(rs.getInt("PropertyTypeId"));;
+			  }
+			  if (rs.getString("PropertyType") != null) {
+				  property.setPropertyType(rs.getString("PropertyType"));
+			  }
+			  if (rs.getString("MotivationId") != null) {
+				  property.setMotivationId(rs.getInt("MotivationId"));
+			  }
+			  if (rs.getString("Motivation") != null) {
+				  property.setMotivation(rs.getString("Motivation"));
+			  }
 			  property.setEditable(rs.getString("Editable"));
 			  if (rs.getString("X_Coord") != null) {
 				  property.setX_Coord(rs.getInt("X_Coord"));
@@ -109,9 +129,10 @@ public class PropertyResponse {
 		       //Handle errors for JDBC
 			   se.printStackTrace();
 		   } finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
 			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
 			    try { conn.close(); } catch (Exception e) { /* ignored */ }
-		   }
+		    }
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
@@ -119,14 +140,18 @@ public class PropertyResponse {
 			} catch (ClassNotFoundException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
-			}
+			} finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
+			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+			    try { conn.close(); } catch (Exception e) { /* ignored */ }
+		    }
 	    Gson gsonBuilder = new GsonBuilder().create();
 	    String result = gsonBuilder.toJson(propertyList);
 	    return result;
 	}
 
 	//Search using custom filters
-	@Path("")
+	
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
@@ -168,12 +193,13 @@ public class PropertyResponse {
 		}
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
+		//ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
 	
 
 	//Add new entry
-	@Path("")
+	
 	@POST
 	public Response add(String body, @Context UriInfo uriInfo) throws SQLException {	
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");

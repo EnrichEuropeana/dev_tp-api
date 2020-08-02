@@ -24,7 +24,7 @@ public class Item {
 	public String AutomaticEnrichmentStatusColorCode;
 	public String AutomaticEnrichmentStatusName;
 	public Integer AutomaticEnrichmentStatusId;
-	public Integer ProjectItemId;
+	public Integer OldItemId;
 	public String Description;
 	public Integer DescriptionLanguage;
 	public Timestamp DateStart;
@@ -88,6 +88,7 @@ public class Item {
 	public List<Transcription> Transcriptions;
 	public List<Annotation> Annotations;
 	public List<Comment> Comments;
+	public List<AutomatedEnrichment> AutomatedEnrichments;
 	
 	public void setStorydcTitle(String storydcTitle) {
 		StorydcTitle = storydcTitle;
@@ -278,8 +279,8 @@ public class Item {
 	public void setAutomaticEnrichmentStatusId(Integer automaticEnrichmentStatusId) {
 		AutomaticEnrichmentStatusId = automaticEnrichmentStatusId;
 	}
-	public void setProjectItemId(Integer projectItemId) {
-		ProjectItemId = projectItemId;
+	public void setOldItemId(Integer oldItemId) {
+		OldItemId = oldItemId;
 	}
 	public void setDescription(String description) {
 		Description = description;
@@ -340,6 +341,9 @@ public class Item {
 	}
 	public void setComments(List<Comment> comments) {
 		Comments = comments;
+	}
+	public void setAutomatedEnrichments(List<AutomatedEnrichment> automatedEnrichments) {
+		AutomatedEnrichments = automatedEnrichments;
 	}
 	
 

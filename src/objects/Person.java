@@ -1,7 +1,5 @@
 package objects;
 
-import java.sql.Timestamp;
-
 public class Person {
 	public Integer PersonId; 
 	public String FirstName; 

@@ -7,7 +7,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -23,7 +22,6 @@ import java.io.InputStream;
 import java.sql.*;
 
 import com.google.gson.*;
-import com.google.gson.stream.MalformedJsonException;
 
 @Path("/annotations")
 public class AnnotationResponse {
@@ -31,6 +29,9 @@ public class AnnotationResponse {
 
 	public String executeQuery(String query, String type) throws SQLException{
 		   List<Annotation> annotations = new ArrayList<Annotation>();
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
@@ -46,9 +47,9 @@ public class AnnotationResponse {
 				Class.forName("com.mysql.jdbc.Driver");
 				
 				   // Open a connection
-				   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+				   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 				   // Execute SQL query
-				   Statement stmt = conn.createStatement();
+				   stmt = conn.createStatement();
 		   try {
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
@@ -63,7 +64,7 @@ public class AnnotationResponse {
 				   return type +" could not be executed";
 			   }
 		   }
-		   ResultSet rs = stmt.executeQuery(query);
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -90,6 +91,7 @@ public class AnnotationResponse {
 		       //Handle errors for JDBC
 			   se.printStackTrace();
 		   }  finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
 			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
 			    try { conn.close(); } catch (Exception e) { /* ignored */ }
 		   }
@@ -100,14 +102,18 @@ public class AnnotationResponse {
 		} catch (ClassNotFoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-		}
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
 	    Gson gsonBuilder = new GsonBuilder().create();
 	    String result = gsonBuilder.toJson(annotations);
 	    return result;
 	}
 
 	//Get entries
-	@Path("")
+	
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
@@ -134,7 +140,7 @@ public class AnnotationResponse {
 	}
 	
 	//Add new entry
-	@Path("")
+	
 	@POST
 	public String add(String body) throws SQLException {	
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");

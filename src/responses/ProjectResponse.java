@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -40,14 +39,12 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.commons.io.IOUtils;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
 import com.google.gson.Gson;
@@ -60,8 +57,6 @@ import com.google.gson.JsonParser;
 import objects.ApiKey;
 import objects.Dataset;
 import objects.Project;
-import objects.Story;
-import sun.misc.BASE64Encoder;
 
 @Path("/projects")
 public class ProjectResponse {
@@ -69,6 +64,9 @@ public class ProjectResponse {
 
 	public String executeQuery(String query, String type) throws SQLException{
 		   List<Project> projectList = new ArrayList<Project>();
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
@@ -85,9 +83,9 @@ public class ProjectResponse {
 			Class.forName("com.mysql.jdbc.Driver");
 		
 		   // Open a connection
-		   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 		   // Execute SQL query
-		   Statement stmt = conn.createStatement();
+		   stmt = conn.createStatement();
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
 			   if (success > 0) {
@@ -97,7 +95,7 @@ public class ProjectResponse {
 				   return type +" could not be executed";
 			   }
 		   }
-		   ResultSet rs = stmt.executeQuery(query);
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -117,12 +115,20 @@ public class ProjectResponse {
 			   se.printStackTrace();
 		   } catch (ClassNotFoundException e) {
 			   e.printStackTrace();
-		}
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
 				e1.printStackTrace();
-			}
+			}  finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
+			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+			    try { conn.close(); } catch (Exception e) { /* ignored */ }
+		   }
 	    Gson gsonBuilder = new GsonBuilder().create();
 	    String result = gsonBuilder.toJson(projectList);
 	    return result;
@@ -131,6 +137,9 @@ public class ProjectResponse {
 	public String getApiKeys() throws SQLException{
 			String query = "SELECT * FROM ApiKey";
 		   List<ApiKey> apiKeys = new ArrayList<ApiKey>();
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
@@ -147,10 +156,10 @@ public class ProjectResponse {
 			Class.forName("com.mysql.jdbc.Driver");
 		
 		   // Open a connection
-		   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 		   // Execute SQL query
-		   Statement stmt = conn.createStatement();
-		   ResultSet rs = stmt.executeQuery(query);
+		   stmt = conn.createStatement();
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -172,12 +181,20 @@ public class ProjectResponse {
 			   se.printStackTrace();
 		   } catch (ClassNotFoundException e) {
 			   e.printStackTrace();
-		}
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
 				e1.printStackTrace();
-			}
+			}  finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
+			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+			    try { conn.close(); } catch (Exception e) { /* ignored */ }
+		   }
 	    Gson gsonBuilder = new GsonBuilder().create();
 	    String result = gsonBuilder.toJson(apiKeys);
 	    return result;
@@ -185,6 +202,9 @@ public class ProjectResponse {
 	
 	public String executeDatasetQuery(String query, String type) throws SQLException{
 	    List<Dataset> datasetList = new ArrayList<Dataset>();
+	   ResultSet rs = null;
+	   Connection conn = null;
+	   Statement stmt = null;
 		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
@@ -202,9 +222,9 @@ public class ProjectResponse {
 			Class.forName("com.mysql.jdbc.Driver");
 		
 		   // Open a connection
-		   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 		   // Execute SQL query
-		   Statement stmt = conn.createStatement();
+		   stmt = conn.createStatement();
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
 			   if (success > 0) {
@@ -214,7 +234,7 @@ public class ProjectResponse {
 				   return type +" could not be executed";
 			   }
 		   }
-		   ResultSet rs = stmt.executeQuery(query);
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -235,12 +255,20 @@ public class ProjectResponse {
 			   se.printStackTrace();
 		   } catch (ClassNotFoundException e) {
 			   e.printStackTrace();
-		}
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 		} catch (IOException e1) {
 			e1.printStackTrace();
-		}
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
 	    Gson gsonBuilder = new GsonBuilder().create();
 	    String result = gsonBuilder.toJson(datasetList);
 	    return result;
@@ -248,6 +276,9 @@ public class ProjectResponse {
 	
 
 	public Integer executeStoryQuery(String query, String type) throws SQLException{
+	   ResultSet rs = null;
+	   Connection conn = null;
+	   Statement stmt = null;
 		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
@@ -265,10 +296,10 @@ public class ProjectResponse {
 			Class.forName("com.mysql.jdbc.Driver");
 		
 		   // Open a connection
-		   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 		   // Execute SQL query
-		   Statement stmt = conn.createStatement();
-		   ResultSet rs = stmt.executeQuery(query);
+		   stmt = conn.createStatement();
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -284,17 +315,25 @@ public class ProjectResponse {
 			   se.printStackTrace();
 		   } catch (ClassNotFoundException e) {
 			   e.printStackTrace();
-		}
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 		} catch (IOException e1) {
 			e1.printStackTrace();
-		}
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
 	    return 0;
 	}
 	
 	//Get Entries
-	@Path("")
+	
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo, String body) throws SQLException {
@@ -326,7 +365,7 @@ public class ProjectResponse {
 	}
 	
 	//Add new entry
-	@Path("")
+	
 	@POST
 	public String add(String body) throws SQLException {	
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -373,6 +412,7 @@ public class ProjectResponse {
 	        content.append(inputLine);
 	    }
 	    in.close();
+	    con.disconnect();
 		return content.toString();
 	}
 	
@@ -448,6 +488,8 @@ public class ProjectResponse {
 	
 
 	public String executeInsertQuery(String query, String type) throws SQLException, ClientProtocolException, IOException{
+	   Connection conn = null;
+	   Statement stmt = null;
 		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
@@ -462,7 +504,7 @@ public class ProjectResponse {
             
     		HttpClient httpclient = HttpClients.createDefault();
     		
-            HttpPost httppost = new HttpPost("https://keycloak-server-test.eanadev.org/auth/realms/DataExchangeInfrastructure/protocol/openid-connect/token");
+            HttpPost httppost = new HttpPost("https://sso.apps.paas-dev.psnc.pl/auth/realms/EnrichEuropeana/protocol/openid-connect/token");
     	
     	        List<NameValuePair> params = new ArrayList<NameValuePair>(2);
     	        params.add(new BasicNameValuePair("grant_type", "client_credentials"));
@@ -489,9 +531,9 @@ public class ProjectResponse {
 			Class.forName("com.mysql.jdbc.Driver");
 		
 		   // Open a connection
-		   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 		   // Execute SQL query
-		   Statement stmt = conn.createStatement();
+		   stmt = conn.createStatement();
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
 			   if (success > 0) {
@@ -515,13 +557,19 @@ public class ProjectResponse {
 		   se.printStackTrace();
 	   } catch (ClassNotFoundException e) {
 		   e.printStackTrace();
+	   }  finally {
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
 	   }
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 		} catch (IOException e1) {
 			e1.printStackTrace();
-		}
-	   return "Failed";
+		}  finally {
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
+		return "Failed";
 	}
 	
 	//Get entry by id
@@ -574,8 +622,12 @@ public class ProjectResponse {
 		fields.add("edm:datasetName");
 		fields.add("edm:isShownAt");
 		fields.add("dc:rights");
+		fields.add("dc:identifier");
 		fields.add("dc:language");
 		fields.add("edm:language");
+		fields.add("edm:agent");
+		fields.add("dcterms:provenance");
+		fields.add("dcterms:created");
 		boolean placeAdded = false;
 	    int keyCount = dataArray.size();
 
@@ -588,6 +640,8 @@ public class ProjectResponse {
 		String externalRecordId = "";
 		String recordId = "";
 		String imageLink = "";
+		String pdfImage = "";
+		List<String> imageLinks = new ArrayList<String>();
 		
 		if (data.getAsJsonObject().has("iiif_url")) {
 			manifestUrl = data.getAsJsonObject().get("iiif_url").getAsString();
@@ -674,11 +728,16 @@ public class ProjectResponse {
 								}
 							}
 							if (key != "" && value != "") {
-								keys.add(key);
-								values.add(value);	
-								if (entry.getKey().equals("dc:title")) {
-									storyTitle = "\"" + value.replace(",", " | ").replaceAll("[\"{}\\[\\]]", "") + "\"";
-								}						
+								keys.add(key);	
+								if (entry.getKey().equals("dc:description")) {
+									values.add("\"" + value.toString().replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") + "\"");
+								}
+								else {
+									values.add(value);
+									if (entry.getKey().equals("dc:title")) {
+										storyTitle = "\"" + value.replace(",", " | ").replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") + "\"";
+									}		
+								}				
 							}
 						}
 						else {
@@ -703,25 +762,40 @@ public class ProjectResponse {
 									value = "\"" + value.replace("\"", "") + " || " + entry.getValue().getAsJsonArray().get(j).toString().replace("\"", "") + "\"";
 								}
 							}
-							values.set(index, "\"" + values.get(index).replace("\"", "") + " || " + value.replace("\"", "") + "\"");
-							if (entry.getKey().equals("dc:title")) {
-								storyTitle = "\"" + storyTitle.replace("\"", "") + " || " + value + "\"";
+							if (entry.getKey().equals("dc:description")) {
+								values.set(index, "\"" + values.get(index).replace("\"", "") + " || " + value.replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") + "\"");
+							}
+							else {
+								values.set(index, "\"" + values.get(index).replace("\"", "") + " || " + value.replace("\"", "") + "\"");
+								if (entry.getKey().equals("dc:title")) {
+									storyTitle = "\"" + storyTitle.replace("\"", "") + " || " + value + "\"";
+								}
 							}
 						}
 					}
 					else {
 						if (!keys.contains(entry.getKey())) {
 							keys.add(entry.getKey());
-							values.add("\"" + entry.getValue().toString().replace(",", " | ").replaceAll("[\"{}\\[\\]]", "") + "\"");
-							if (entry.getKey().equals("dc:title")) {
-								storyTitle = "\"" + entry.getValue().toString().replace(",", " | ").replaceAll("[\"{}\\[\\]]", "") + "\"";
+							if (entry.getKey().equals("dc:description")) {
+								values.add("\"" + entry.getValue().toString().replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") + "\"");
+							}
+							else {
+								values.add("\"" + entry.getValue().toString().replace(",", " | ").replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") + "\"");
+								if (entry.getKey().equals("dc:title")) {
+									storyTitle = "\"" + entry.getValue().toString().replace(",", " | ").replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") + "\"";
+								}
 							}
 						}
 						else {
 							int index = keys.indexOf(entry.getKey());
-							values.set(index, "\"" + values.get(index).replace("\"", "") + " || " + entry.getValue().toString().replace("\"", "") + "\"");
-							if (entry.getKey().equals("dc:title")) {
-								storyTitle = "\"" + storyTitle.replace("\"", "") + " || " + entry.getValue().toString().replace("\"", "") + "\"";
+							if (entry.getKey().equals("dc:description")) {
+								values.set(index, "\"" + entry.getValue().toString().replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") + "\"");
+							}
+							else {
+								values.set(index, "\"" + values.get(index).replace("\"", "") + " || " + entry.getValue().toString().replace(",", " | ").replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") + "\"");
+								if (entry.getKey().equals("dc:title")) {
+									storyTitle = "\"" + entry.getValue().toString().replace(",", " | ").replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") + "\"";
+								}
 							}
 						}
 					}
@@ -730,7 +804,7 @@ public class ProjectResponse {
 					if (entry.getKey().equals("iiif_url")) {
 						manifestUrl = entry.getValue().getAsString();
 					}
-					if (entry.getKey().equals("@type") && entry.getValue().getAsString().equals("edm:Place") && placeAdded == false) {
+					if (entry.getKey().equals("@type") && !entry.getValue().isJsonArray() && entry.getValue().getAsString().equals("edm:Place") && placeAdded == false) {
 						if (dataArray.get(i).getAsJsonObject().keySet().contains("geo:lat")
 								&& dataArray.get(i).getAsJsonObject().keySet().contains("geo:long")) {
 							if (!keys.contains("PlaceLatitude")) {
@@ -758,14 +832,39 @@ public class ProjectResponse {
 										if (placeName.get(j) instanceof JsonObject && placeName.get(j).getAsJsonObject().get("@language").toString() == "en") {
 											keys.add("PlaceName");
 											values.add(placeName.get(j).getAsJsonObject().get("@value").toString());
+											break;
 										}
 									}
 								}
 							}
+							else {
+								if (!keys.contains("PlaceName")) {
+									keys.add("PlaceName");
+									values.add(dataArray.get(i).getAsJsonObject().get("skos:prefLabel").toString());
+								}
+							}
+						}
+					}
+					else if (entry.getKey().equals("@type") && !entry.getValue().isJsonArray() && entry.getValue().getAsString().equals("edm:Agent")) {
+						if (!keys.contains("edm:agent")) {
+							if (dataArray.get(i).getAsJsonObject().keySet().contains("skos:prefLabel")) {
+								keys.add("edm:agent");
+								values.add("\"" + dataArray.get(i).getAsJsonObject().get("skos:prefLabel").getAsString().replace(",", " | ").replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") 
+										+ " | " + dataArray.get(i).getAsJsonObject().get("@id").getAsString().replace(",", " | ").replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") + "\"");	
+							}
+						}
+						else {
+							if (dataArray.get(i).getAsJsonObject().keySet().contains("skos:prefLabel")) {
+								int index = keys.indexOf("edm:agent");
+								values.set(index, "\"" + values.get(index).replace("\"", "") + " || " + dataArray.get(i).getAsJsonObject().get("skos:prefLabel").getAsString().replace(",", " | ").replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") 
+										+ " | " + dataArray.get(i).getAsJsonObject().get("@id").getAsString().replace(",", " | ").replace("\\\"", "").replaceAll("[\"{}\\[\\]]", "") + "\"");	
+							}
 						}
 					}
 					else {
-						if (entry.getKey().equals("@type") && entry.getValue().getAsString().equals("edm:WebResource")) {
+						if (entry.getKey().equals("@type") && 
+								(!entry.getValue().isJsonArray() && entry.getValue().getAsString().equals("edm:WebResource")) 
+								|| (entry.getValue().isJsonArray() && entry.getValue().getAsJsonArray().toString().contains("edm:WebResource"))) {
 							if (dataArray.get(i).getAsJsonObject().keySet().contains("dcterms:isReferencedBy")){
 								if (dataArray.get(i).getAsJsonObject().get("dcterms:isReferencedBy").isJsonObject()
 										&& dataArray.get(i).getAsJsonObject().get("dcterms:isReferencedBy").getAsJsonObject().get("@id").getAsString().endsWith("manifest.json")) {
@@ -776,10 +875,15 @@ public class ProjectResponse {
 								}
 							}
 							else {
-								imageLink = dataArray.get(i).getAsJsonObject().get("@id").toString();
+								if (dataArray.get(i).getAsJsonObject().has("ebucore:hasMimeType") && dataArray.get(i).getAsJsonObject().get("ebucore:hasMimeType").toString().contains("application/pdf")) {
+									pdfImage = dataArray.get(i).getAsJsonObject().get("@id").toString();
+								}
+								else {
+									imageLinks.add(dataArray.get(i).getAsJsonObject().get("@id").toString());
+								}
 							}
 						}
-						else if (entry.getKey().equals("@type") && entry.getValue().getAsString().equals("edm:ProvidedCHO")) {
+						else if (entry.getKey().equals("@type") && !entry.getValue().isJsonArray() && entry.getValue().getAsString().equals("edm:ProvidedCHO")) {
 							if (dataArray.get(i).getAsJsonObject().keySet().contains("@id")){
 								//if (dataArray.get(i).getAsJsonObject().get("@id").getAsString().startsWith("http://data.europeana")) {
 									externalRecordId = dataArray.get(i).getAsJsonObject().get("@id").getAsString();
@@ -792,7 +896,7 @@ public class ProjectResponse {
 				}
 			}
 		}
-
+		
 		keys.add("PlaceUserGenerated");
 		values.add("1");
 		keys.add("ProjectId");
@@ -835,7 +939,8 @@ public class ProjectResponse {
 
 			resource = executeInsertQuery(query, "Import");
 			if (resource == "Failed") {
-				ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
+				ResponseBuilder rBuild = Response.ok(query);
+		        //ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
 		        return rBuild.build();
 			}
 
@@ -889,13 +994,10 @@ public class ProjectResponse {
 		            prop.load(input);
 
 		            // get the property value and print it out
-		            final String DB_URL = prop.getProperty("DB_URL");
-		            final String USER = prop.getProperty("USER");
-		            final String PASS = prop.getProperty("PASS");
 		            
 		    		HttpClient httpclient = HttpClients.createDefault();
 		    		
-		            HttpPost httppost = new HttpPost("https://keycloak-server-test.eanadev.org/auth/realms/DataExchangeInfrastructure/protocol/openid-connect/token");
+		            HttpPost httppost = new HttpPost("https://sso.apps.paas-dev.psnc.pl/auth/realms/EnrichEuropeana/protocol/openid-connect/token");
 	    	
 	    	        List<NameValuePair> params = new ArrayList<NameValuePair>(2);
 	    	        params.add(new BasicNameValuePair("grant_type", "client_credentials"));
@@ -904,6 +1006,8 @@ public class ProjectResponse {
 	    	        httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
 	    	        HttpResponse response = httpclient.execute(httppost);
 	    	        HttpEntity entity = response.getEntity();
+	    	        HttpURLConnection con = null;
+	    	        BufferedReader in = null;
 
 	    	        if (entity != null) {
 	    	            try (InputStream instream = entity.getContent()) {
@@ -914,7 +1018,7 @@ public class ProjectResponse {
 	    	    	        String authHeader = authData.get("access_token").toString();
 
 	        	            URL url = new URL(manifestUrl);
-	        				HttpURLConnection con = (HttpURLConnection) url.openConnection();
+	        				con = (HttpURLConnection) url.openConnection();
 							
 							con.setRequestMethod("GET");
 							con.setRequestProperty("Content-Type", "application/json");
@@ -924,15 +1028,17 @@ public class ProjectResponse {
 		    	    	        String redirect = con.getHeaderField("Location");
 		    					
 			    				if (redirect != null){
+			    					con.disconnect();
 			    					con = (HttpURLConnection) new URL(redirect).openConnection();
 			    				}
 			    				else {
+			    					con.disconnect();
 			    					con = (HttpURLConnection) new URL(con.getURL().toString()).openConnection();
 			    				}
 						    }
 						    
 
-							BufferedReader in = new BufferedReader(
+							in = new BufferedReader(
 							  new InputStreamReader(con.getInputStream(), "UTF-8"));
 							String inputLine;
 							StringBuffer content = new StringBuffer();
@@ -946,13 +1052,21 @@ public class ProjectResponse {
 	    					
 	    					JsonArray imageArray = manifest.get("sequences").getAsJsonArray().get(0).getAsJsonObject().get("canvases").getAsJsonArray();
 	    					int imageCount = imageArray.size();
+	    					
+	    					if (pdfImage != "") {
+	    						imageLinks.clear();
+		    					for (int i = 0; i < imageCount; i++) {
+		    						imageLinks.add("\"" + pdfImage.replace("\"", "") + "?page=" + i + "\"");
+		    					}
+	    					}
 	    	
 	    					itemQuery = "INSERT INTO Item ("
 	    							+ "Title, "
 	    							+ "StoryId, "
 	    							+ "ImageLink, "
 	    							+ "OrderIndex, "
-	    							+ "Manifest"
+	    							+ "Manifest, "
+	    							+ "`edm:WebResource`"
 	    							+ ") VALUES ";
 	    					for (int i = 0; i < imageCount; i++) {
 	    						imageLink = imageArray.get(i).getAsJsonObject().get("images").getAsJsonArray().get(0).getAsJsonObject().get("resource").getAsJsonObject().toString();
@@ -984,7 +1098,8 @@ public class ProjectResponse {
 	    							+ "(SELECT StoryId FROM Story WHERE `dc:title` = " + "\"" + storyTitle.replace("\"", "") + "\" ORDER BY StoryId DESC LIMIT 1), "
 	    							+ "\"" + imageLink.replace("\"", "\\\"") + "\"" + ", "
 	    							+ (i + 1) + ", "
-	    							+ "\"" + manifestUrl + "\"" + ")";
+	    							+ "\"" + manifestUrl + "\"" + ", "
+	    							+ imageLinks.get(i) + ")";
 	    						}
 	    						else {
 	    							itemQuery += ", ("
@@ -992,17 +1107,22 @@ public class ProjectResponse {
 	    	    							+ "(SELECT StoryId FROM Story WHERE `dc:title` = " + "\"" + storyTitle.replace("\"", "") + "\" ORDER BY StoryId DESC LIMIT 1), "
 	    									+ "\"" + imageLink.replace("\"", "\\\"") + "\"" + ", "
 	    									+ (i + 1) + ", "
-	    									+ "\"" + manifestUrl + "\"" + ")";
+	    	    							+ "\"" + manifestUrl + "\"" + ", "
+	    	    							+ imageLinks.get(i) + ")";
 	    						}
 	    					}
 	    					String itemResponse = executeInsertQuery(itemQuery, "Import");
-	    					
+
 	    					
 	    					if (itemResponse == "Failed") {
 	    						ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
 	    				        return rBuild.build();
 	    					}
-	    	            }
+	    	            }  catch (Exception e) { 
+	    	            } finally {
+							in.close();
+							con.disconnect();
+	    			   }
 	    	        }
 				}
 			}
@@ -1028,135 +1148,6 @@ public class ProjectResponse {
 				ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
 		        return rBuild.build();
 			}
-			/*
-	
-			String itemQuery = "";
-			if (manifestUrl == "") {
-				itemQuery = "";
-				itemQuery += "INSERT INTO Item ("
-						+ "Title, "
-						+ "StoryId, "
-						+ "ImageLink, "
-						+ "OrderIndex, "
-						+ "Manifest"
-						+ ") "
-						+ "VALUES ("
-						+ "\"" + storyTitle.replace("\"", "") + " Item "  + "1" + "\"" +  ", "
-						+ "(SELECT StoryId FROM Story ORDER BY StoryId DESC LIMIT 1), "
-						+ "\"" + imageLink.replace("\"", "") + "\"" + ", "
-						+ "1" + ", "
-						+ "\"" + manifestUrl + "\"" + ")";
-				String itemResponse = executeInsertQuery(itemQuery, "Import");
-				if (itemResponse == "Failed") {
-					ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
-			        return rBuild.build();
-				}
-			}
-			else {
-				try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
-	
-		            Properties prop = new Properties();
-	
-		            // load a properties file
-		            prop.load(input);
-	
-		            // get the property value and print it out
-		            final String DB_URL = prop.getProperty("DB_URL");
-		            final String USER = prop.getProperty("USER");
-		            final String PASS = prop.getProperty("PASS");
-		            
-		    		HttpClient httpclient = HttpClients.createDefault();
-		    		
-		            HttpPost httppost = new HttpPost("https://keycloak-server-test.eanadev.org/auth/realms/DataExchangeInfrastructure/protocol/openid-connect/token");
-	    	
-	    	        List<NameValuePair> params = new ArrayList<NameValuePair>(2);
-	    	        params.add(new BasicNameValuePair("grant_type", "client_credentials"));
-	    	        params.add(new BasicNameValuePair("client_secret", prop.getProperty("SECRET_KEY")));
-	    	        params.add(new BasicNameValuePair("client_id", "tp-api-client"));
-	    	        httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
-	    	        HttpResponse response = httpclient.execute(httppost);
-	    	        HttpEntity entity = response.getEntity();
-	
-	    	        if (entity != null) {
-	    	            try (InputStream instream = entity.getContent()) {
-	    	                StringWriter writer = new StringWriter();
-	    	                IOUtils.copy(instream, writer, StandardCharsets.UTF_8);
-	    	                JsonObject authData = new JsonParser().parse(writer.toString()).getAsJsonObject();
-	
-	    	    	        String authHeader = authData.get("access_token").toString();
-	
-	        	            URL url = new URL(manifestUrl);
-	        				HttpURLConnection con = (HttpURLConnection) url.openConnection();
-							
-							con.setRequestMethod("GET");
-							con.setRequestProperty("Content-Type", "application/json");
-						    con.setRequestProperty("Authorization", "Bearer " + authHeader.replace("\"", "") );
-						    
-						    if (converted == false) {
-		    	    	        String redirect = con.getHeaderField("Location");
-		    					
-			    				if (redirect != null){
-			    					con = (HttpURLConnection) new URL(redirect).openConnection();
-			    				}
-			    				else {
-			    					con = (HttpURLConnection) new URL(con.getURL().toString()).openConnection();
-			    				}
-						    }
-						    
-	
-							BufferedReader in = new BufferedReader(
-							  new InputStreamReader(con.getInputStream(), "UTF-8"));
-							String inputLine;
-							StringBuffer content = new StringBuffer();
-							while ((inputLine = in.readLine()) != null) {
-							    content.append(inputLine);
-							}
-							in.close();
-							con.disconnect();
-							
-	    					JsonObject manifest = new JsonParser().parse(content.toString()).getAsJsonObject();
-	    					
-	    					JsonArray imageArray = manifest.get("sequences").getAsJsonArray().get(0).getAsJsonObject().get("canvases").getAsJsonArray();
-	    					int imageCount = imageArray.size();
-	    	
-	    					itemQuery = "INSERT INTO Item ("
-	    							+ "Title, "
-	    							+ "StoryId, "
-	    							+ "ImageLink, "
-	    							+ "OrderIndex, "
-	    							+ "Manifest"
-	    							+ ") VALUES ";
-	    					for (int i = 0; i < imageCount; i++) {
-	    						imageLink = imageArray.get(i).getAsJsonObject().get("images").getAsJsonArray().get(0).getAsJsonObject().get("resource").getAsJsonObject().toString();
-	
-	    						if (i == 0) {
-	    							itemQuery += "("
-	    							+ "\"" + storyTitle.replace("\"", "") + " Item "  + (i + 1) + "\"" +  ", "
-	    							+ "(SELECT StoryId FROM Story ORDER BY StoryId DESC LIMIT 1), "
-	    							+ "\"" + imageLink.replace("\"", "\\\"") + "\"" + ", "
-	    							+ (i + 1) + ", "
-	    							+ "\"" + manifestUrl + "\"" + ")";
-	    						}
-	    						else {
-	    							itemQuery += ", ("
-	    									+ "\"" + storyTitle.replace("\"", "") + " Item "  + (i + 1) + "\"" +  ", "
-	    									+ "(SELECT StoryId FROM Story ORDER BY StoryId DESC LIMIT 1), "
-	    									+ "\"" + imageLink.replace("\"", "\\\"") + "\"" + ", "
-	    									+ (i + 1) + ", "
-	    									+ "\"" + manifestUrl + "\"" + ")";
-	    						}
-	    					}
-	    					String itemResponse = executeInsertQuery(itemQuery, "Import");
-	    					
-	    					
-	    					if (itemResponse == "Failed") {
-	    						ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
-	    				        return rBuild.build();
-	    					}
-	    	            }
-	    	        }
-				}
-			}*/
 		}
 		
 		if (recordId.contains("/")) {
@@ -1168,31 +1159,39 @@ public class ProjectResponse {
 		FileWriter fileWriter = new FileWriter(file);
 		fileWriter.write(body);
 	    fileWriter.close();
-
-	    URL storySolr = new URL("http://fresenia.man.poznan.pl:8983/solr/Stories/dataimport?command=full-import&clean=true");
-	    HttpURLConnection con = (HttpURLConnection) storySolr.openConnection();
-	    con.setRequestMethod("GET");
-	    BufferedReader in = new BufferedReader(
-	    new InputStreamReader(con.getInputStream()));
-	    String inputLine;
-	    StringBuffer content = new StringBuffer();
-	    while ((inputLine = in.readLine()) != null) {
-	        content.append(inputLine);
-	    }
-	    in.close();
-	    con.disconnect();
 	    
-	    URL itemSolr = new URL("http://fresenia.man.poznan.pl:8983/solr/Items/dataimport?command=full-import&clean=true");
-	    con = (HttpURLConnection) itemSolr.openConnection();
-	    con.setRequestMethod("GET");
-	    in = new BufferedReader(
-	    new InputStreamReader(con.getInputStream()));
-	    content = new StringBuffer();
-	    while ((inputLine = in.readLine()) != null) {
-	        content.append(inputLine);
-	    }
-	    in.close();
-	    con.disconnect();
+	    HttpURLConnection con = null;
+	    BufferedReader in = null;
+	    try {
+		    URL storySolr = new URL("http://fresenia.man.poznan.pl:8983/solr/Stories/dataimport?command=full-import&clean=true");
+		    con = (HttpURLConnection) storySolr.openConnection();
+		    con.setRequestMethod("GET");
+		    in = new BufferedReader(
+		    new InputStreamReader(con.getInputStream()));
+		    String inputLine;
+		    StringBuffer content = new StringBuffer();
+		    while ((inputLine = in.readLine()) != null) {
+		        content.append(inputLine);
+		    }
+		    in.close();
+		    con.disconnect();
+		    
+		    URL itemSolr = new URL("http://fresenia.man.poznan.pl:8983/solr/Items/dataimport?command=full-import&clean=true");
+		    con = (HttpURLConnection) itemSolr.openConnection();
+		    con.setRequestMethod("GET");
+		    in = new BufferedReader(
+		    new InputStreamReader(con.getInputStream()));
+		    content = new StringBuffer();
+		    while ((inputLine = in.readLine()) != null) {
+		        content.append(inputLine);
+		    }
+		    in.close();
+		    con.disconnect();
+	    }  catch (Exception e) { 
+        } finally {
+			in.close();
+			con.disconnect();
+	   }
 		
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();

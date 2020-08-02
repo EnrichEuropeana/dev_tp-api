@@ -27,8 +27,11 @@ import com.google.gson.*;
 public class PersonResponse {
 
 
-	public String executeQuery(String query, String type) throws SQLException{
+	public static String executeQuery(String query, String type) throws SQLException{
 		   List<Person> personList = new ArrayList<Person>();
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
@@ -44,11 +47,27 @@ public class PersonResponse {
 				Class.forName("com.mysql.jdbc.Driver");
 				
 				   // Open a connection
-				   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+				   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 				   // Execute SQL query
-				   Statement stmt = conn.createStatement();
+				   stmt = conn.createStatement();
 		   try {
 		   if (type != "Select") {
+			   if (type == "PersonId") {
+				   rs = stmt.executeQuery(query);
+				   if(rs.next() == false){
+					   rs.close();
+					   stmt.close();
+					   conn.close();
+					   return "";
+				   }
+				   else {
+					   String personId = rs.getString("PersonId");
+					   rs.close();
+					   stmt.close();
+					   conn.close();
+					   return personId;
+				   }
+			   }
 			   int success = stmt.executeUpdate(query);
 			   if (success > 0) {
 				   stmt.close();
@@ -61,7 +80,7 @@ public class PersonResponse {
 				   return type +" could not be executed";
 			   }
 		   }
-		   ResultSet rs = stmt.executeQuery(query);
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -87,7 +106,8 @@ public class PersonResponse {
 		   } catch(SQLException se) {
 		       //Handle errors for JDBC
 			   se.printStackTrace();
-		   } finally {
+		   }  finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
 			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
 			    try { conn.close(); } catch (Exception e) { /* ignored */ }
 		   }
@@ -98,18 +118,36 @@ public class PersonResponse {
 			} catch (ClassNotFoundException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
-			}
+			}  finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
+			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+			    try { conn.close(); } catch (Exception e) { /* ignored */ }
+		   }
 	    Gson gsonBuilder = new GsonBuilder().create();
 	    String result = gsonBuilder.toJson(personList);
 	    return result;
 	}
 
 	//Search using custom filters
-	@Path("")
+	
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
-		String query = "SELECT * FROM Person WHERE 1";
+		String query = "SELECT * FROM ("
+				+ "SELECT " +
+				"   ip.PersonId as PersonId,\r\n" + 
+				"	FirstName,\r\n" + 
+				"    LastName,\r\n" + 
+				"    BirthPLace,\r\n" + 
+				"    BirthDate,\r\n" + 
+				"    DeathPlace,\r\n" + 
+				"    DeathDate,\r\n" + 
+				"    Link,\r\n" + 
+				"    Description,\r\n" + 
+				"    ip.ItemId as ItemId\r\n" + 
+				"FROM Person p\r\n" + 
+				"JOIN ItemPerson ip 	ON p.PersonId = ip.PersonId\r\n) a " + 
+				" WHERE 1";
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		
 		for(String key : queryParams.keySet()){
@@ -128,76 +166,112 @@ public class PersonResponse {
 		}
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
+		//ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
 
 
 	//Add new entry
-	@Path("")
+	
 	@POST
 	public Response add(String body) throws SQLException {	
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
 	    Person person = gson.fromJson(body, Person.class);
-	    
-	    //Check if all mandatory fields are included
-	    String query = "";
-		query += "INSERT INTO Person (FirstName, LastName, BirthPlace, BirthDate, DeathPlace, DeathDate, Link, Description, ItemId) "
-						+ "VALUES (";
+
+    	// Check if Person exists already
+    	String checkQuery = "SELECT PersonId FROM Person "
+    						+ "WHERE FirstName ";
 		if(!person.FirstName.equals("")) {
-			query += "'" + person.FirstName + "',";
+			checkQuery += "= '" + person.FirstName + "' ";
 		}
 		else {
-			query += "null,";
+			checkQuery += "is null ";
 		}
+    	checkQuery += "AND LastName ";
 		if(!person.LastName.equals("")) {
-			query += "'" + person.LastName + "',";
+			checkQuery += "= '" + person.LastName + "' ";
 		}
 		else {
-			query += "null,";
+			checkQuery += "is null ";
 		}
-		if(!person.BirthPlace.equals("")) {
-			query += "'" + person.BirthPlace + "',";
+		checkQuery += " LIMIT 1";
+		String PersonId = executeQuery(checkQuery, "PersonId");
+		if (PersonId == "") {
+			// Person doesn't exist yet
+		    String query = "";
+			query += "INSERT INTO Person (FirstName, LastName, BirthPlace, BirthDate, DeathPlace, DeathDate, Link, Description, ItemId) "
+							+ "VALUES (";
+			if(!person.FirstName.equals("")) {
+				query += "'" + person.FirstName + "',";
+			}
+			else {
+				query += "null,";
+			}
+			if(!person.LastName.equals("")) {
+				query += "'" + person.LastName + "',";
+			}
+			else {
+				query += "null,";
+			}
+			if(!person.BirthPlace.equals("")) {
+				query += "'" + person.BirthPlace + "',";
+			}
+			else {
+				query += "null,";
+			}
+			if(!person.BirthDate.equals("")) {
+				query += "'" + person.BirthDate + "',";
+			}
+			else {
+				query += "null,";
+			}
+			if(!person.DeathPlace.equals("")) {
+				query += "'" + person.DeathPlace + "',";
+			}
+			else {
+				query += "null,";
+			}
+			if(!person.DeathDate.equals("")) {
+				query += "'" + person.DeathDate + "',";
+			}
+			else {
+				query += "null,";
+			}
+			if(!person.Link.equals("")) {
+				query += "'" + person.Link + "',";
+			}
+			else {
+				query += "null,";
+			}
+			if(!person.Description.equals("")) {
+				query += "'" + person.Description + "',";
+			}
+			else {
+				query += "null,";
+			}
+			query += person.ItemId;
+			query += ")";
+			String resource = executeQuery(query, "Insert");
+			
+			// Add Person to Item
+			
+			PersonId = executeQuery(checkQuery, "PersonId");
+			String itemPersonInsert = "INSERT INTO ItemPerson (ItemId, PersonId) "
+										+ "VALUES (" + person.ItemId + ", " + PersonId + ")";
+			String itemPersonInsertResponse = executeQuery(itemPersonInsert, "Insert");
+			ResponseBuilder rBuild = Response.ok(query);
+	        return rBuild.build();
 		}
 		else {
-			query += "null,";
+			// Add Person to Item
+			
+			String itemPersonInsert = "INSERT INTO ItemPerson (ItemId, PersonId) "
+										+ "VALUES (" + person.ItemId + ", " + PersonId + ")";
+			String itemPersonInsertResponse = executeQuery(itemPersonInsert, "Insert");
+			ResponseBuilder rBuild = Response.ok(itemPersonInsertResponse);
+	        return rBuild.build();
 		}
-		if(!person.BirthDate.equals("")) {
-			query += "'" + person.BirthDate + "',";
-		}
-		else {
-			query += "null,";
-		}
-		if(!person.DeathPlace.equals("")) {
-			query += "'" + person.DeathPlace + "',";
-		}
-		else {
-			query += "null,";
-		}
-		if(!person.DeathDate.equals("")) {
-			query += "'" + person.DeathDate + "',";
-		}
-		else {
-			query += "null,";
-		}
-		if(!person.Link.equals("")) {
-			query += "'" + person.Link + "',";
-		}
-		else {
-			query += "null,";
-		}
-		if(!person.Description.equals("")) {
-			query += "'" + person.Description + "',";
-		}
-		else {
-			query += "null,";
-		}
-		query += person.ItemId;
-		query += ")";
-		String resource = executeQuery(query, "Insert");
-		ResponseBuilder rBuild = Response.ok(resource);
-		//ResponseBuilder rBuild = Response.ok(query);
-        return rBuild.build();
 	}
 
 
@@ -295,7 +369,21 @@ public class PersonResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response getEntry(@PathParam("id") int id) throws SQLException {
-		String resource = executeQuery("SELECT * FROM Person WHERE PersonId = " + id, "Select");
+		String resource = executeQuery("SELECT * FROM ("
+				+ "SELECT " +
+				"   ip.PersonId as PersonId,\r\n" + 
+				"	FirstName,\r\n" + 
+				"    LastName,\r\n" + 
+				"    BirthPLace,\r\n" + 
+				"    BirthDate,\r\n" + 
+				"    DeathPlace,\r\n" + 
+				"    DeathDate,\r\n" + 
+				"    Link,\r\n" + 
+				"    Description,\r\n" + 
+				"    ip.ItemId as ItemId\r\n" + 
+				"FROM Person p\r\n" + 
+				"JOIN ItemPerson ip 	ON p.PersonId = ip.PersonId\r\n) a " + 
+				" WHERE PersonId = " + id, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();
 	}

@@ -29,6 +29,9 @@ public class UserResponse {
 
 	public String executeQuery(String query, String type) throws SQLException{
 		   List<User> userList = new ArrayList<User>();
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
@@ -44,9 +47,9 @@ public class UserResponse {
 				Class.forName("com.mysql.jdbc.Driver");
 				
 				   // Open a connection
-				   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+				   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 				   // Execute SQL query
-				   Statement stmt = conn.createStatement();
+				   stmt = conn.createStatement();
 		   try {
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
@@ -61,7 +64,7 @@ public class UserResponse {
 				   return type +" could not be executed";
 			   }
 		   }
-		   ResultSet rs = stmt.executeQuery(query);
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -69,8 +72,8 @@ public class UserResponse {
 			  User user = new User();
 			  user.setUserId(rs.getInt("UserId"));
 			  user.setWP_UserId(rs.getInt("WP_UserId"));
-			  user.setWP_Role(rs.getString("Email"));
-			  user.setRole(rs.getString("RoleId"));
+			  user.setRoleId(rs.getInt("RoleId"));
+			  user.setRole(rs.getString("Role"));
 			  user.setTimestamp(rs.getTimestamp("Timestamp"));
 			  user.setToken(rs.getString("Token"));
 			  userList.add(user);
@@ -84,9 +87,10 @@ public class UserResponse {
 		       //Handle errors for JDBC
 			   se.printStackTrace();
 		   } finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
 			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
 			    try { conn.close(); } catch (Exception e) { /* ignored */ }
-		   }
+		    }
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
@@ -94,18 +98,30 @@ public class UserResponse {
 			} catch (ClassNotFoundException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
-			}
+			} finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
+			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+			    try { conn.close(); } catch (Exception e) { /* ignored */ }
+		    }
 	    Gson gsonBuilder = new GsonBuilder().create();
 	    String result = gsonBuilder.toJson(userList);
 	    return result;
 	}
 
-	//Search using custom filters
-	@Path("/search")
+	@Path("")
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
-		String query = "SELECT * FROM Campaign WHERE 1";
+		String query = "SELECT " + 
+							" u.UserId as UserId, " + 
+							" u.WP_UserId as WP_UserId, " + 
+							" u.RoleId as RoleId, " + 
+							" r.Name as Role, " + 
+							" u.Timestamp as Timestamp, " + 
+							" u.Token as Token " + 
+						" FROM User u " + 
+						" JOIN Role r ON u.RoleId = r.RoleId " +
+						" WHERE 1";
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		
 		for(String key : queryParams.keySet()){
@@ -129,7 +145,7 @@ public class UserResponse {
 	
 
 	//Add new entry
-	@Path("")
+	
 	@POST
 	public Response add(String body) throws SQLException {	
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -138,7 +154,7 @@ public class UserResponse {
 	    
 		String query = "INSERT INTO User (WP_UserId, RoleId, WP_Role, Token) "
 						+ "VALUES (" + user.WP_UserId
-						+ ", (SELECT RoleID FROM Role WHERE Name = '" + user.Role + "')"
+						+ ", IFNULL((SELECT RoleID FROM Role WHERE Name = '" + user.Role + "'), 1)"
 						+ ", '" + user.WP_Role + "'"
 						+ ", '" + user.Token +"')";
 		String resource = executeQuery(query, "Insert");
@@ -201,7 +217,17 @@ public class UserResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response getEntry(@PathParam("id") int id) throws SQLException {
-		String resource = executeQuery("SELECT * FROM User WHERE UserId = " + id, "Select");
+		String query = "SELECT " + 
+				" u.UserId as UserId, " + 
+				" u.WP_UserId as WP_UserId, " + 
+				" u.RoleId as RoleId, " + 
+				" r.Name as Role, " + 
+				" u.Timestamp as Timestamp, " + 
+				" u.Token as Token " + 
+			" FROM User u " + 
+			" JOIN Role r ON u.RoleId = r.RoleId " +
+			" WHERE WP_UserId = " + id;
+		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
         return rBuild.build();
 	}

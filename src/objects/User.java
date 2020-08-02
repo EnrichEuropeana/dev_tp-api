@@ -6,6 +6,7 @@ public class User {
 	public Integer UserId; 
 	public Integer WP_UserId; 
 	public String WP_Role; 
+	public Integer RoleId; 
 	public String Role; 
 	public Timestamp Timestamp;
 	public String Token;
@@ -18,6 +19,9 @@ public class User {
 	}
 	public void setWP_Role(String wP_Role) {
 		WP_Role = wP_Role;
+	}
+	public void setRoleId(Integer roleId) {
+		RoleId = roleId;
 	}
 	public void setRole(String role) {
 		Role = role;

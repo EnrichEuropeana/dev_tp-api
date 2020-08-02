@@ -3,6 +3,7 @@ package objects;
 public class Ranking {
 	public Integer UserId;
 	public Integer EventUser;
+	public String Role;
 	public Integer TeamId;
 	public String TeamName;
 	public Float Miles; 
@@ -17,6 +18,9 @@ public class Ranking {
 	}
 	public void setEventUser(Integer eventUser) {
 		EventUser = eventUser;
+	}
+	public void setRole(String role) {
+		Role = role;
 	}
 	public void setTeamId(Integer teamId) {
 		TeamId = teamId;

@@ -32,13 +32,17 @@ public class Story {
 	public String dcType;
 	public String dcRelation;
 	public String dctermsMedium;
+	public String dctermsCreated;
+	public String dctermsProvenance;
 	public String edmDatasetName;
 	public String dcContributor;
 	public String edmRights;
 	public String edmBegin;
 	public String edmEnd;
+	public String edmAgent;
 	public String edmIsShownAt;
 	public String dcRights;
+	public String dcIdentifier;
 	public String dcLanguage;
 	public String edmLanguage;
 	public Integer ProjectId;
@@ -141,6 +145,12 @@ public class Story {
 	public void setdctermsMedium(String dctermsMedium) {
 		this.dctermsMedium = dctermsMedium;
 	}
+	public void setdctermsCreated(String dctermsCreated) {
+		this.dctermsCreated = dctermsCreated;
+	}
+	public void setdctermsProvenance(String dctermsProvenance) {
+		this.dctermsProvenance = dctermsProvenance;
+	}
 	public void setedmDatasetName(String edmDatasetName) {
 		this.edmDatasetName = edmDatasetName;
 	}
@@ -156,11 +166,17 @@ public class Story {
 	public void setedmEnd(String edmEnd) {
 		this.edmEnd = edmEnd;
 	}
+	public void setedmAgent(String edmAgent) {
+		this.edmAgent = edmAgent;
+	}
 	public void setedmIsShownAt(String edmIsShownAt) {
 		this.edmIsShownAt = edmIsShownAt;
 	}
 	public void setdcRights(String dcRights) {
 		this.dcRights = dcRights;
+	}
+	public void setdcIdentifier(String dcIdentifier) {
+		this.dcIdentifier = dcIdentifier;
 	}
 	public void setdcLanguage(String dcLanguage) {
 		this.dcLanguage = dcLanguage;

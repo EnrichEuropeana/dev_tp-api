@@ -6,6 +6,7 @@ public class Place {
 	public Float Latitude;
 	public Float Longitude;
 	public Integer ItemId; 
+	public Integer StoryId; 
 	public String ItemTitle; 
 	public String Link;
 	public Integer Zoom;
@@ -33,6 +34,10 @@ public class Place {
 
 	public void setItemId (Integer ItemId) {
 		this.ItemId = ItemId;
+	}
+
+	public void setStoryId (Integer StoryId) {
+		this.StoryId = StoryId;
 	}
 
 	public void setItemTitle(String itemTitle) {

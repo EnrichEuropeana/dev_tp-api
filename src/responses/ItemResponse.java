@@ -1,6 +1,5 @@
 package responses;
 
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -12,23 +11,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-
 import objects.Annotation;
+import objects.AutomatedEnrichment;
 import objects.Comment;
 import objects.Item;
 import objects.Language;
@@ -37,28 +22,33 @@ import objects.Place;
 import objects.Property;
 import objects.Transcription;
 
+import Utilities.Util;
+
 import java.util.*;
 import java.util.Date;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
+import java.lang.reflect.Type;
 import java.sql.*;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 
 @Path("/items")
 public class ItemResponse {
 
 
-	public String executeQuery(String query, String type) throws SQLException{
+	public static String executeQuery(String query, String type) throws SQLException{
 		   List<Item> itemList = new ArrayList<Item>();
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
@@ -75,9 +65,9 @@ public class ItemResponse {
 			Class.forName("com.mysql.jdbc.Driver");
 		
 		   // Open a connection
-		   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 		   // Execute SQL query
-		   Statement stmt = conn.createStatement();
+		   stmt = conn.createStatement();
 		   if (type != "Select") {
 			   
 			   int success = stmt.executeUpdate(query);
@@ -92,8 +82,8 @@ public class ItemResponse {
 				   return type +" could not be executed";
 			   }
 		   }
-		   stmt.execute("SET group_concat_max_len = 1000000;");
-		   ResultSet rs = stmt.executeQuery(query);
+		   stmt.execute("SET group_concat_max_len = 10000000;");
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -103,7 +93,7 @@ public class ItemResponse {
 			  
 			  // Add Properties
 			  List<Property> PropertyList = new ArrayList<Property>();
-			  if (rs.getString("PropertyId") != null) {
+			  if (Util.hasColumn(rs, "PropertyId") && rs.getString("PropertyId") != null) {
 				  String[] PropertyIds = rs.getString("PropertyId").split("&~&", -1);
 				  String[] PropertyValues = rs.getString("PropertyValue").split("&~&", -1);
 				  String[] PropertyDescriptions = new String[PropertyIds.length];
@@ -127,7 +117,7 @@ public class ItemResponse {
 			  
 			  //Add Places
 			  List<Place> PlaceList = new ArrayList<Place>();
-			  if (rs.getString("PlaceId") != null) {
+			  if (Util.hasColumn(rs, "PlaceId") && rs.getString("PlaceId") != null && !rs.getString("PlaceId").equals("NULL")) {
 				  String[] PlaceIds = rs.getString("PlaceId").split("&~&", -1);
 				  String[] PlaceNames = rs.getString("PlaceName").split("&~&", -1);
 				  String[] PlaceLatitudes = rs.getString("PlaceLatitude").split("&~&", -1);
@@ -135,7 +125,10 @@ public class ItemResponse {
 				  String[] PlaceLink = rs.getString("PlaceLink").split("&~&", -1);
 				  String[] PlaceZoom = rs.getString("PlaceZoom").split("&~&", -1);
 				  String[] PlaceComment = rs.getString("PlaceComment").split("&~&", -1);
-				  String[] PlaceUserId = rs.getString("PlaceUserId").split("&~&", -1);
+				  String[] PlaceUserId = new String[PlaceIds.length];
+				  if (rs.getString("PlaceUserId") != null) {
+					  PlaceUserId = rs.getString("PlaceUserId").split("&~&", -1);
+				  }
 				  String[] PlaceUserGenerated = rs.getString("PlaceUserGenerated").split("&~&", -1);
 				  String[] PlaceWikidataNames = rs.getString("PlaceWikidataName").split("&~&", -1);
 				  String[] PlaceWikidataIds = rs.getString("PlaceWikidataId").split("&~&", -1);
@@ -145,20 +138,32 @@ public class ItemResponse {
 					  place.setName(PlaceNames[i]);
 					  place.setLatitude(Float.parseFloat(PlaceLatitudes[i]));
 					  place.setLongitude(Float.parseFloat(PlaceLongitudes[i]));
-					  place.setLink(PlaceLink[i]);
-					  place.setZoom(Integer.parseInt(PlaceZoom[i]));
-					  place.setComment(PlaceComment[i]);
-					  place.setUserId(Integer.parseInt(PlaceUserId[i]));
+					  if (PlaceLink[i] != null && !PlaceLink[i].equals("NULL")) {
+						  place.setLink(PlaceLink[i]);
+					  }
+					  if (PlaceZoom[i] != null && !PlaceZoom[i].equals("NULL")) {
+						  place.setZoom(Integer.parseInt(PlaceZoom[i]));
+					  }
+					  if (PlaceComment[i] != null && !PlaceComment[i].equals("NULL")) {
+						  place.setComment(PlaceComment[i]);
+					  }
+					  if (PlaceUserId[i] != null && !PlaceUserId[i].equals("NULL")) {
+						  place.setUserId(Integer.parseInt(PlaceUserId[i]));
+					  }
 					  place.setUserGenerated(PlaceUserGenerated[i]);
-					  place.setWikidataName(PlaceWikidataNames[i]);
-					  place.setWikidataId(PlaceWikidataIds[i]);
+					  if (PlaceWikidataNames[i] != null && !PlaceWikidataNames[i].equals("NULL")) {
+						  place.setWikidataName(PlaceWikidataNames[i]);
+					  }
+					  if (PlaceWikidataIds[i] != null && !PlaceWikidataIds[i].equals("NULL")) {
+						  place.setWikidataId(PlaceWikidataIds[i]);
+					  }
 					  PlaceList.add(place);
 				  }
 			  }
 
 			  //Add Transcriptions
 			  List<Transcription> TranscriptionList = new ArrayList<Transcription>();
-			  if (rs.getString("TranscriptionId") != null) {				  
+			  if (Util.hasColumn(rs, "TranscriptionId") && rs.getString("TranscriptionId") != null) {				  
 				  String[] TranscriptionIds = rs.getString("TranscriptionId").split("&~&", -1);
 				  String[] TranscriptionTexts = rs.getString("TranscriptionText").split("&~&", -1);
 				  String[] TranscriptionTextNoTags = rs.getString("TranscriptionTextNoTags").split("&~&", -1);
@@ -202,7 +207,7 @@ public class ItemResponse {
 					  transcription.setWP_UserId(Integer.parseInt(TranscriptionWP_UserIds[i]));
 					  transcription.setCurrentVersion(TranscriptionCurrentVersions[i]);
 				      transcription.setTimestamp(TranscriptionTimestamps[i]);
-					  if (TranscriptionEuropeanaAnnotationIds[i] != null) {
+					  if (!TranscriptionEuropeanaAnnotationIds[i].equals("NULL")) {
 						  transcription.setEuropeanaAnnotationId(Integer.parseInt(TranscriptionEuropeanaAnnotationIds[i]));
 					  }
 					  transcription.setNoText(TranscriptionNoTexts[i]);
@@ -236,7 +241,7 @@ public class ItemResponse {
 			  
 			  //Add Annotations
 			  List<Annotation> AnnotationList = new ArrayList<Annotation>();
-			  if (rs.getString("AnnotationId") != null) {
+			  if (Util.hasColumn(rs, "AnnotationId") && rs.getString("AnnotationId") != null) {
 				  String[] AnnotationIds = rs.getString("AnnotationId").split("&~&", -1);
 				  String[] AnnotationTexts = rs.getString("AnnotationText").split("&~&", -1);
 				  String[] AnnotationUserIds = rs.getString("AnnotationUserId").split("&~&", -1);
@@ -262,7 +267,7 @@ public class ItemResponse {
 
 			  //Add Comments
 			  List<Comment> CommentList = new ArrayList<Comment>();
-			  if (rs.getString("CommentId") != null) {
+			  if (Util.hasColumn(rs, "CommentId") && rs.getString("CommentId") != null) {
 				  String[] CommentIds = rs.getString("CommentId").split("&~&", -1);
 				  String[] CommentTexts = rs.getString("CommentText").split("&~&", -1);
 				  String[] CommentUserIds = rs.getString("CommentUserId").split("&~&", -1);
@@ -288,9 +293,32 @@ public class ItemResponse {
 				  }
 			  }
 			  
+
+			  //Add AutomatedEnrichments
+			  List<AutomatedEnrichment> AutomatedEnrichmentList = new ArrayList<AutomatedEnrichment>();
+			  if (Util.hasColumn(rs, "AutomatedEnrichmentId") && rs.getString("AutomatedEnrichmentId") != null) {
+				  String[] AutomatedEnrichmentIds = rs.getString("AutomatedEnrichmentId").split("&~&", -1);
+				  String[] AutomatedEnrichmentNames = rs.getString("AutomatedEnrichmentName").split("&~&", -1);
+				  String[] AutomatedEnrichmentTypes = rs.getString("AutomatedEnrichmentType").split("&~&", -1);
+				  String[] AutomatedEnrichmentExternalIds = rs.getString("AutomatedEnrichmentExternalId").split("&~&", -1);
+				  String[] AutomatedEnrichmentWikiDatas = rs.getString("AutomatedEnrichmentWikiData").split("&~&", -1);
+				  for (int i = 0; i < AutomatedEnrichmentIds.length; i++) {
+					  AutomatedEnrichment automatedEnrichment = new AutomatedEnrichment();
+					  automatedEnrichment.setAutomatedEnrichmentId(Integer.parseInt(AutomatedEnrichmentIds[i]));
+					  automatedEnrichment.setName(AutomatedEnrichmentNames[i]);
+					  automatedEnrichment.setType(AutomatedEnrichmentTypes[i]);
+					  automatedEnrichment.setExternalId(AutomatedEnrichmentExternalIds[i]);
+					  if (!AutomatedEnrichmentWikiDatas[i].equals("NULL")) {
+						  automatedEnrichment.setWikiData(AutomatedEnrichmentWikiDatas[i]);
+					  }
+					  
+					  AutomatedEnrichmentList.add(automatedEnrichment);
+				  }
+			  }
+			  
 			  //Add Persons
 			  List<Person> PersonList = new ArrayList<Person>();
-			  if (rs.getString("PersonId") != null) {
+			  if (Util.hasColumn(rs, "PersonId") && rs.getString("PersonId") != null) {
 				  String[] PersonIds = rs.getString("PersonId").split("&~&", -1);
 				  String[] PersonFirstNames = new String[PersonIds.length];
 				  if (rs.getString("PersonFirstName") != null) {
@@ -359,9 +387,161 @@ public class ItemResponse {
 			  item.setProperties(PropertyList);
 			  item.setPlaces(PlaceList);
 			  item.setComments(CommentList);
+			  item.setAutomatedEnrichments(AutomatedEnrichmentList);
 			  item.setPersons(PersonList);
 			  item.setTranscriptions(TranscriptionList);
 			  item.setAnnotations(AnnotationList);
+			  item.setTitle(rs.getString("Title"));
+			  item.setCompletionStatusColorCode(rs.getString("CompletionStatusColorCode"));
+			  item.setCompletionStatusName(rs.getString("CompletionStatusName"));
+			  item.setCompletionStatusId(rs.getInt("CompletionStatusId"));
+			  if (Util.hasColumn(rs, "TranscriptionStatusId")) {
+				  item.setTranscriptionStatusColorCode(rs.getString("TranscriptionStatusColorCode"));
+				  item.setTranscriptionStatusName(rs.getString("TranscriptionStatusName"));
+				  item.setTranscriptionStatusId(rs.getInt("TranscriptionStatusId"));
+			  }
+			  if (Util.hasColumn(rs, "DescriptionStatusId")) {
+				  item.setDescriptionStatusColorCode(rs.getString("DescriptionStatusColorCode"));
+				  item.setDescriptionStatusName(rs.getString("DescriptionStatusName"));
+				  item.setDescriptionStatusId(rs.getInt("DescriptionStatusId"));
+			  }
+			  if (Util.hasColumn(rs, "LocationStatusId")) {
+				  item.setLocationStatusColorCode(rs.getString("LocationStatusColorCode"));
+				  item.setLocationStatusName(rs.getString("LocationStatusName"));
+				  item.setLocationStatusId(rs.getInt("LocationStatusId"));
+			  }
+			  if (Util.hasColumn(rs, "TaggingStatusId")) {
+				  item.setTaggingStatusColorCode(rs.getString("TaggingStatusColorCode"));
+				  item.setTaggingStatusName(rs.getString("TaggingStatusName"));
+				  item.setTaggingStatusId(rs.getInt("TaggingStatusId"));
+			  }
+			  if (Util.hasColumn(rs, "AutomaticEnrichmentStatusId")) {
+				  item.setAutomaticEnrichmentStatusColorCode(rs.getString("AutomaticEnrichmentStatusColorCode"));
+				  item.setAutomaticEnrichmentStatusName(rs.getString("AutomaticEnrichmentStatusName"));
+				  item.setAutomaticEnrichmentStatusId(rs.getInt("AutomaticEnrichmentStatusId"));
+			  }
+			  item.setOldItemId(rs.getInt("OldItemId"));
+			  item.setDescription(rs.getString("Description"));
+			  item.setDescriptionLanguage(rs.getInt("DescriptionLanguage"));
+			  item.setDateStart(rs.getTimestamp("DateStart"));
+			  item.setDateEnd(rs.getTimestamp("DateEnd"));
+			  item.setDateStartDisplay(rs.getString("DateStartDisplay"));
+			  item.setDateEndDisplay(rs.getString("DateEndDisplay"));
+			  item.setDatasetId(rs.getInt("DatasetId"));
+			  item.setImageLink(rs.getString("ImageLink"));
+			  item.setOrderIndex(rs.getInt("OrderIndex"));
+			  item.setTimestamp(rs.getString("Timestamp"));
+			  item.setLockedTime(rs.getString("LockedTime"));
+			  item.setLockedUser(rs.getInt("LockedUser"));
+			  item.setManifest(rs.getString("Manifest"));
+			  if (Util.hasColumn(rs, "StoryId")) {
+				  item.setStoryId(rs.getInt("StoryId"));
+				  item.setStorydcTitle(rs.getString("StorydcTitle"));
+				  item.setStorydcDescription(rs.getString("StorydcDescription"));
+				  item.setStoryedmLandingPage(rs.getString("StoryedmLandingPage"));
+				  item.setStoryExternalRecordId(rs.getString("StoryExternalRecordId"));
+				  item.setStoryPlaceName(rs.getString("StoryPlaceName"));
+				  item.setStoryPlaceLatitude(rs.getFloat("StoryPlaceLatitude"));
+				  item.setStoryPlaceLongitude(rs.getFloat("StoryPlaceLongitude"));
+				  item.setStoryPlaceZoom(rs.getString("StoryPlaceZoom"));
+				  item.setStoryPlaceLink(rs.getString("StoryPlaceLink"));
+				  item.setStoryPlaceComment(rs.getString("StoryPlaceComment"));
+				  item.setStoryPlaceUserId(rs.getInt("StoryPlaceUserId"));
+				  item.setStoryPlaceUserGenerated(rs.getString("StoryPlaceUserGenerated"));
+				  item.setStorydcCreator(rs.getString("StorydcCreator"));
+				  item.setStorydcSource(rs.getString("StoryedmRights"));
+				  item.setStorydcSource(rs.getString("StorydcSource"));
+				  item.setStoryedmCountry(rs.getString("StoryedmCountry"));
+				  item.setStoryedmDataProvider(rs.getString("StoryedmDataProvider"));
+				  item.setStoryedmProvider(rs.getString("StoryedmProvider"));
+				  item.setStoryedmYear(rs.getString("StoryedmYear"));
+				  item.setStorydcPublisher(rs.getString("StorydcPublisher"));
+				  item.setStorydcCoverage(rs.getString("StorydcCoverage"));
+				  item.setStorydcDate(rs.getString("StorydcDate"));
+				  item.setStorydcType(rs.getString("StorydcType"));
+				  item.setStorydcRelation(rs.getString("StorydcRelation"));
+				  item.setStorydctermsMedium(rs.getString("StorydctermsMedium"));
+				  item.setStoryedmDatasetName(rs.getString("StoryedmDatasetName"));
+				  item.setStorydcContributor(rs.getString("StorydcContributor"));
+				  item.setStoryedmRights(rs.getString("StoryedmRights"));
+				  item.setStoryedmBegin(rs.getString("StoryedmBegin"));
+				  item.setStoryedmEnd(rs.getString("StoryedmEnd"));
+				  item.setStoryedmIsShownAt(rs.getString("StoryedmIsShownAt"));
+				  item.setStorydcRights(rs.getString("StorydcRights"));
+				  item.setStorydcLanguage(rs.getString("StorydcLanguage"));
+				  item.setStoryedmLanguage(rs.getString("StoryedmLanguage"));
+				  item.setStoryProjectId(rs.getInt("StoryProjectId"));
+				  item.setStorySummary(rs.getString("StorySummary"));
+				  item.setStoryParentStory(rs.getInt("StoryParentStory"));
+				  item.setStorySearchText(rs.getString("StorySearchText"));
+				  item.setStoryDateStart(rs.getTimestamp("StoryDateStart"));
+				  item.setStoryDateEnd(rs.getTimestamp("StoryDateEnd"));
+				  item.setStoryOrderIndex(rs.getInt("StoryOrderIndex"));
+			  }
+
+			  itemList.add(item);
+		   }
+		
+		   // Clean-up environment
+		   rs.close();
+		   stmt.close();
+		   conn.close();
+		   } catch(SQLException se) {
+		       //Handle errors for JDBC
+			   se.printStackTrace();
+		   } catch (ClassNotFoundException e) {
+			   e.printStackTrace();
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
+			} catch (FileNotFoundException e1) {
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}  finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
+			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+			    try { conn.close(); } catch (Exception e) { /* ignored */ }
+		   }
+	    Gson gsonBuilder = new GsonBuilder().create();
+	    String result = gsonBuilder.toJson(itemList);
+	    return result;
+	}
+	
+	public Item getItemData(String query) throws SQLException{
+		   List<Item> itemList = new ArrayList<Item>();
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
+	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+
+	            Properties prop = new Properties();
+
+	            // load a properties file
+	            prop.load(input);
+
+	            // get the property value and print it out
+	            final String DB_URL = prop.getProperty("DB_URL");
+	            final String USER = prop.getProperty("USER");
+	            final String PASS = prop.getProperty("PASS");
+		   // Register JDBC driver
+		   try {
+			Class.forName("com.mysql.jdbc.Driver");
+		
+		   // Open a connection
+		   conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		   // Execute SQL query
+		   stmt = conn.createStatement();
+		   stmt.execute("SET group_concat_max_len = 10000000;");
+		   rs = stmt.executeQuery(query);
+		   
+		   // Extract data from result set
+		   while(rs.next()){
+		      //Retrieve by column name
+			  Item item = new Item();
+			  item.setItemId(rs.getInt("ItemId"));
 			  item.setTitle(rs.getString("Title"));
 			  item.setCompletionStatusColorCode(rs.getString("CompletionStatusColorCode"));
 			  item.setCompletionStatusName(rs.getString("CompletionStatusName"));
@@ -381,7 +561,7 @@ public class ItemResponse {
 			  item.setAutomaticEnrichmentStatusColorCode(rs.getString("AutomaticEnrichmentStatusColorCode"));
 			  item.setAutomaticEnrichmentStatusName(rs.getString("AutomaticEnrichmentStatusName"));
 			  item.setAutomaticEnrichmentStatusId(rs.getInt("AutomaticEnrichmentStatusId"));
-			  item.setProjectItemId(rs.getInt("ProjectItemId"));
+			  item.setOldItemId(rs.getInt("OldItemId"));
 			  item.setDescription(rs.getString("Description"));
 			  item.setDescriptionLanguage(rs.getInt("DescriptionLanguage"));
 			  item.setDateStart(rs.getTimestamp("DateStart"));
@@ -437,8 +617,8 @@ public class ItemResponse {
 			  item.setStoryDateStart(rs.getTimestamp("StoryDateStart"));
 			  item.setStoryDateEnd(rs.getTimestamp("StoryDateEnd"));
 			  item.setStoryOrderIndex(rs.getInt("StoryOrderIndex"));
-
-			  itemList.add(item);
+			  
+			  return item;
 		   }
 		
 		   // Clean-up environment
@@ -450,19 +630,29 @@ public class ItemResponse {
 			   se.printStackTrace();
 		   } catch (ClassNotFoundException e) {
 			   e.printStackTrace();
-		}
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
 				e1.printStackTrace();
-			}
-	    Gson gsonBuilder = new GsonBuilder().create();
-	    String result = gsonBuilder.toJson(itemList);
-	    return result;
+			}  finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
+			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+			    try { conn.close(); } catch (Exception e) { /* ignored */ }
+		   }
+      return null;
 	}
+
 	
 
 	public String executeDataQuery(String query, String field) throws SQLException{
+	   ResultSet rs = null;
+	   Connection conn = null;
+	   Statement stmt = null;
 		try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
             Properties prop = new Properties();
@@ -480,10 +670,10 @@ public class ItemResponse {
 			Class.forName("com.mysql.jdbc.Driver");
 		
 		   // Open a connection
-		   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 		   // Execute SQL query
-		   Statement stmt = conn.createStatement();
-		   ResultSet rs = stmt.executeQuery(query);
+		   stmt = conn.createStatement();
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -503,17 +693,25 @@ public class ItemResponse {
 			   se.printStackTrace();
 		   } catch (ClassNotFoundException e) {
 			   e.printStackTrace();
-		}
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 		} catch (IOException e1) {
 			e1.printStackTrace();
-		}
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
 	    return "";
 	}
 
 	//Get all Entries
-	@Path("")
+	
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response getAll(@Context UriInfo uriInfo) throws SQLException {
@@ -541,7 +739,7 @@ public class ItemResponse {
 				"            i.AutomaticEnrichmentStatusId AS AutomaticEnrichmentStatusId,\r\n" + 
 				"            i.AutomaticEnrichmentStatusName AS AutomaticEnrichmentStatusName,\r\n" + 
 				"            i.AutomaticEnrichmentStatusColorCode AS AutomaticEnrichmentStatusColorCode,\r\n" + 
-				"            i.ProjectItemId AS ProjectItemId,\r\n" + 
+				"            i.OldItemId AS OldItemId,\r\n" + 
 				"            i.Description AS Description,\r\n" + 
 				"            i.DescriptionLanguage AS DescriptionLanguage,\r\n" + 
 				"            i.DateStart AS DateStart,\r\n" + 
@@ -742,7 +940,7 @@ public class ItemResponse {
 				"                SEPARATOR '&~&') AS PlaceZoom,\r\n" + 
 				"            GROUP_CONCAT(IFNULL(pl.Comment, 'NULL')\r\n" + 
 				"                SEPARATOR '&~&') AS PlaceComment,\r\n" + 
-				"            GROUP_CONCAT(pl.UserId\r\n" + 
+				"            GROUP_CONCAT(IFNULL(pl.UserId, 'NULL')\r\n" + 
 				"                SEPARATOR '&~&') AS PlaceUserId,\r\n" + 
 				"            GROUP_CONCAT(pl.UserGenerated + 0\r\n" + 
 				"                SEPARATOR '&~&') AS PlaceUserGenerated,\r\n" + 
@@ -772,7 +970,7 @@ public class ItemResponse {
 				"                SEPARATOR '&~&') AS TranscriptionTimestamp,\r\n" + 
 				"            GROUP_CONCAT(t.NoText\r\n" + 
 				"                SEPARATOR '&~&') AS TranscriptionNoText,\r\n" + 
-				"            GROUP_CONCAT(t.EuropeanaAnnotationId\r\n" + 
+				"            GROUP_CONCAT(IFNULL(t.EuropeanaAnnotationId, 'NULL')\r\n" + 
 				"                SEPARATOR '&~&') AS TranscriptionEuropeanaAnnotationId,\r\n" + 
 				"            GROUP_CONCAT(IFNULL(l.LanguageId, 'NULL')\r\n" + 
 				"                SEPARATOR '&~&') AS TranscriptionLanguageId,\r\n" + 
@@ -886,30 +1084,6 @@ public class ItemResponse {
 		//ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
-	
-/*
-	//Add new entry
-	@Path("/add")
-	@POST
-	public String add(String body) throws SQLException {	
-	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
-	    Gson gson = gsonBuilder.create();
-	    Item item = gson.fromJson(body, Item.class);
-	    
-	    //Check if all mandatory fields are included
-	    if (item.Name != null && item.Public != null) {
-			String query = "INSERT INTO Item (Name, Start, End, Public) "
-							+ "VALUES ('" + item.Name + "'"
-								+ ", '" + item.Start + "'"
-								+ ", '" + item.End + "'"
-								+ ", " + item.Public + ")";
-			String resource = executeQuery(query, "Insert");
-			return resource;
-	    } else {
-	    	return "Fields missing";
-	    }
-	}
-*/
 
 	//Edit entry by id
 	@Path("/{id}")
@@ -937,39 +1111,75 @@ public class ItemResponse {
 			String resource = executeQuery(query, "Update");
 
 			String completionQuery = "SELECT * FROM Item WHERE ItemId = " + id;
-			String completionStatus = executeDataQuery(completionQuery, "CompletionStatusId");
+			String completionStatus = executeDataQuery(completionQuery, "TranscriptionStatusId");
 			String exportedQuery = "SELECT * FROM Item WHERE ItemId = " + id;
 			String exported = executeDataQuery(exportedQuery, "Exported");
 			String recordIdQuery = "SELECT * FROM Story WHERE StoryId = (SELECT StoryId FROM Item WHERE ItemId = " + id + ")";
 			String recordId = executeDataQuery(recordIdQuery, "ExternalRecordId");
+			String itemIdQuery = "SELECT * FROM Item WHERE ItemId = " + id;
+			String itemId = executeDataQuery(itemIdQuery, "ItemId");
 			String[] recordIdSplit = recordId.split("/");
 			recordId =  "/" + recordIdSplit[recordIdSplit.length - 2] + "/" + recordIdSplit[recordIdSplit.length - 1];
 			
 			if (completionStatus.equals("4") && exported.equals("0") ) {
-	    		HttpClient httpclient = HttpClients.createDefault();
-	    		/*
-				HttpPost httppost = new HttpPost("https://fresenia.man.poznan.pl/api/transcription");
-		    	
-		        String json = "{ " + 
-		        		"	recordId: " + recordId + 
-		        		"}";
-		        HttpEntity entity = new StringEntity(json, ContentType.APPLICATION_JSON);
-		        httppost.setEntity(entity);
-		        HttpResponse response = httpclient.execute(httppost);*/
-		        
-		        // Set Exported to 1 to prevent multiple exports
-		        HttpPost httppost = new HttpPost("https://fresenia.man.poznan.pl/dev/tp-api/items/" + id);
-		    	
-				String json = "{ " + 
-		        		"	Exported: " + "b'1'" + 
-		        		"}";
-		        HttpEntity entity = new StringEntity(json, ContentType.APPLICATION_JSON);
-		        httppost.setEntity(entity);
-		        HttpResponse response = httpclient.execute(httppost);
+				/*
+				try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
+
+		            Properties prop = new Properties();
+
+		            // load a properties file
+		            prop.load(input);
+
+		            
+		    		HttpClient httpclient = HttpClients.createDefault();
+		    		
+		            HttpPost httppost = new HttpPost("https://sso.apps.paas-dev.psnc.pl/auth/realms/EnrichEuropeana/protocol/openid-connect/token");
+	    	
+	    	        List<NameValuePair> params = new ArrayList<NameValuePair>(2);
+	    	        params.add(new BasicNameValuePair("grant_type", "client_credentials"));
+	    	        params.add(new BasicNameValuePair("client_secret", prop.getProperty("SECRET_KEY")));
+	    	        params.add(new BasicNameValuePair("client_id", "tp-api-client"));
+	    	        httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
+	    	        HttpResponse response = httpclient.execute(httppost);
+	    	        HttpEntity entity = response.getEntity();
+
+	    	        if (entity != null) {
+	    	            try (InputStream instream = entity.getContent()) {
+	    	                StringWriter writer = new StringWriter();
+	    	                IOUtils.copy(instream, writer, StandardCharsets.UTF_8);
+	    	                JsonObject authData = new JsonParser().parse(writer.toString()).getAsJsonObject();
+
+	    	    	        String authHeader = authData.get("access_token").toString();
+
+	        	            URL url = new URL("https://fresenia.man.poznan.pl/dei/api/transcription?recordId=" + recordId + "&itemId=" + itemId);
+	        				HttpURLConnection con = (HttpURLConnection) url.openConnection();
+							
+							con.setRequestMethod("POST");
+							con.setRequestProperty("Content-Type", "application/json");
+						    con.setRequestProperty("Authorization", "Bearer " + authHeader.replace("\"", "") );
+						    
+							BufferedReader in = new BufferedReader(
+							  new InputStreamReader(con.getInputStream(), "UTF-8"));
+							String inputLine;
+							StringBuffer content = new StringBuffer();
+							while ((inputLine = in.readLine()) != null) {
+							    content.append(inputLine);
+							}
+							in.close();
+							con.disconnect();
+	    	            }
+	    	        }
+				}    
+				*/
             }
-			
-			//ResponseBuilder rBuild = Response.ok(resource);
-			ResponseBuilder rBuild = Response.ok(query);
+			String updateTimestampQuery = "UPDATE Item SET LastUpdated = NOW() WHERE ItemId = " + id;
+			executeQuery(updateTimestampQuery, "Update");
+			String updateStoryTimestampQuery = "UPDATE Story SET LastUpdated = NOW() WHERE StoryId = (SELECT StoryId FROM Item WHERE ItemId = " + id + ")";
+			executeQuery(updateStoryTimestampQuery, "Update");
+			StoryResponse.solrUpdate();
+
+			ResponseBuilder rBuild = Response.ok(resource);
+			//ResponseBuilder rBuild = Response.ok(query);
 	        return rBuild.build();
 	    } else {
 			ResponseBuilder rBuild = Response.status(Response.Status.BAD_REQUEST);
@@ -992,7 +1202,11 @@ public class ItemResponse {
 		@Path("/{id}")
 		@Produces("application/json;charset=utf-8")
 		@GET
-		public Response getEntryPost(@PathParam("id") int id) throws SQLException {
+		public Response getEntryPost(@PathParam("id") int id) throws SQLException, ParseException, IOException {
+	        Gson gson = new Gson();
+            JsonParser jsonParser = new JsonParser();
+            /*
+	        
 			String query =  "SELECT \r\n" + 
 					"    i.ItemId AS ItemId,\r\n" + 
 					"    i.Title AS Title,\r\n" + 
@@ -1014,7 +1228,7 @@ public class ItemResponse {
 					"    i.AutomaticEnrichmentStatusId AS AutomaticEnrichmentStatusId,\r\n" + 
 					"    auStatus.Name AS AutomaticEnrichmentStatusName,\r\n" + 
 					"    auStatus.ColorCode AS AutomaticEnrichmentStatusColorCode,\r\n" + 
-					"    i.ProjectItemId AS ProjectItemId,\r\n" + 
+					"    i.OldItemId AS OldItemId,\r\n" + 
 					"    i.Description AS Description,\r\n" + 
 					"    i.DescriptionLanguage AS DescriptionLanguage,\r\n" + 
 					"    i.DateStart AS DateStart,\r\n" + 
@@ -1027,7 +1241,12 @@ public class ItemResponse {
 					"    i.Timestamp AS Timestamp,\r\n" + 
 					"    i.LockedTime AS LockedTime,\r\n" + 
 					"    i.LockedUser AS LockedUser,\r\n" + 
-					"    i.Manifest AS Manifest,\r\n" + 
+					"    i.Manifest AS Manifest,\r\n\r\n" + 
+					"    autEnrichments.AutomatedEnrichmentId AS AutomatedEnrichmentId,\r\n" + 
+					"    autEnrichments.Name AS AutomatedEnrichmentName,\r\n" + 
+					"    autEnrichments.Type AS AutomatedEnrichmentType,\r\n" + 
+					"    autEnrichments.ExternalId AS AutomatedEnrichmentExternalId,\r\n" + 
+					"    autEnrichments.WikiData AS AutomatedEnrichmentWikiData," + 
 					"    prop.PropertyId AS PropertyId,\r\n" + 
 					"    prop.PropertyTypeName AS PropertyTypeName,\r\n" + 
 					"    prop.PropertyValue AS PropertyValue,\r\n" + 
@@ -1159,6 +1378,7 @@ public class ItemResponse {
 					"			Property p ON ip.PropertyId = p.PropertyId\r\n" + 
 					"				LEFT JOIN\r\n" + 
 					"			PropertyType pt ON p.PropertyTypeId = pt.PropertyTypeId\r\n" + 
+					"		WHERE ip.ItemId = " + id +
 					"		GROUP BY ip.ItemId\r\n" + 
 					"	) prop \r\n" + 
 					"		ON prop.ItemId = i.ItemId\r\n" + 
@@ -1176,9 +1396,28 @@ public class ItemResponse {
 					"				SEPARATOR '&~&') AS CommentTimestamp\r\n" + 
 					"		FROM\r\n" + 
 					"			Comment c\r\n" + 
+					"		WHERE c.ItemId = " + id +
 					"		GROUP BY c.ItemId\r\n" + 
 					"	) comments ON comments.ItemId = i.ItemId \r\n" + 
-					"        LEFT JOIN\r\n" + 
+					"        LEFT JOIN\r\n\r\n" + 
+					"	(\r\n" + 
+					"		SELECT \r\n" + 
+					"			ae.ItemId,\r\n" + 
+					"			GROUP_CONCAT(ae.AutomatedEnrichmentId\r\n" + 
+					"				SEPARATOR '&~&') AS AutomatedEnrichmentId,\r\n" + 
+					"			GROUP_CONCAT(ae.Name\r\n" + 
+					"				SEPARATOR '&~&') AS Name,\r\n" + 
+					"			GROUP_CONCAT(ae.Type\r\n" + 
+					"				SEPARATOR '&~&') AS Type,\r\n" + 
+					"			GROUP_CONCAT(ae.ExternalId\r\n" + 
+					"				SEPARATOR '&~&') AS ExternalId,\r\n" + 
+					"			GROUP_CONCAT(IFNULL(ae.WikiData, 'NULL')\r\n" + 
+					"				SEPARATOR '&~&') AS WikiData\r\n" + 
+					"		FROM\r\n" + 
+					"			AutomatedEnrichment ae\r\n" + 
+					"		WHERE ae.ItemId =  " + id + " GROUP BY ae.ItemId\r\n" + 
+					"	) autEnrichments ON autEnrichments.ItemId = i.ItemId\r\n" + 
+					"        LEFT JOIN" + 
 					"	(\r\n" + 
 					"		SELECT \r\n" + 
 					"			pl.ItemId,\r\n" + 
@@ -1196,7 +1435,7 @@ public class ItemResponse {
 					"				SEPARATOR '&~&') AS PlaceZoom,\r\n" + 
 					"			GROUP_CONCAT(IFNULL(pl.Comment, 'NULL')\r\n" + 
 					"				SEPARATOR '&~&') AS PlaceComment,\r\n" + 
-					"			GROUP_CONCAT(pl.UserId\r\n" + 
+					"			GROUP_CONCAT(IFNULL(pl.UserId, 'NULL')\r\n" + 
 					"				SEPARATOR '&~&') AS PlaceUserId,\r\n" + 
 					"			GROUP_CONCAT(pl.UserGenerated + 0\r\n" + 
 					"				SEPARATOR '&~&') AS PlaceUserGenerated,\r\n" + 
@@ -1206,6 +1445,7 @@ public class ItemResponse {
 					"				SEPARATOR '&~&') AS PlaceWikidataId\r\n" + 
 					"		FROM\r\n" + 
 					"			Place pl\r\n" + 
+					"		WHERE pl.ItemId = " + id +
 					"		GROUP BY pl.ItemId\r\n" + 
 					"	) place ON place.ItemId = i.ItemId\r\n" + 
 					"        LEFT JOIN\r\n" + 
@@ -1226,7 +1466,7 @@ public class ItemResponse {
 					"				SEPARATOR '&~&') AS TranscriptionTimestamp,\r\n" + 
 					"			GROUP_CONCAT(u.WP_UserId ORDER BY t.Timestamp DESC\r\n" + 
 					"				SEPARATOR '&~&') AS TranscriptionWP_UserId,\r\n" + 
-					"			GROUP_CONCAT(t.EuropeanaAnnotationId ORDER BY t.Timestamp DESC\r\n" + 
+					"			GROUP_CONCAT(IFNULL(t.EuropeanaAnnotationId, 'NULL') ORDER BY t.Timestamp DESC\r\n" + 
 					"				SEPARATOR '&~&') AS TranscriptionEuropeanaAnnotationId,\r\n" + 
 					"			GROUP_CONCAT(t.NoText + 0 ORDER BY t.Timestamp DESC\r\n" + 
 					"				SEPARATOR '&~&') AS TranscriptionNoText,\r\n" + 
@@ -1262,6 +1502,7 @@ public class ItemResponse {
 					"    		GROUP BY tl.TranscriptionId" +	
 					"		) " +
 					"		l ON t.TranscriptionId = l.TranscriptionId " +
+					"		WHERE t.ItemId = " + id +
 					"    	GROUP BY t.ItemId\r\n" +
 					"	) transc On transc.ItemId = i.ItemId\r\n" + 
 					"        LEFT JOIN\r\n" + 
@@ -1288,12 +1529,13 @@ public class ItemResponse {
 					"			Annotation a\r\n" + 
 					"				LEFT JOIN\r\n" + 
 					"			AnnotationType at ON a.AnnotationTypeId = at.AnnotationTypeId\r\n" + 
+					"		WHERE a.ItemId = " + id +
 					"		GROUP BY a.ItemId\r\n" + 
 					"	) annot ON annot.ItemId = i.ItemId\r\n" + 
-					"        LEFT JOIN\r\n" + 
-					"	(\r\n" + 
+					"		LEFT JOIN \r\n" + 
+					"        (\r\n" + 
 					"		SELECT \r\n" + 
-					"			pe.ItemId,\r\n" + 
+					"			iperson.ItemId,\r\n" + 
 					"			GROUP_CONCAT(pe.PersonId\r\n" + 
 					"				SEPARATOR '&~&') AS PersonId,\r\n" + 
 					"			GROUP_CONCAT(IFNULL(pe.FirstName, 'NULL')\r\n" + 
@@ -1313,15 +1555,283 @@ public class ItemResponse {
 					"			GROUP_CONCAT(IFNULL(pe.Description, 'NULL')\r\n" + 
 					"				SEPARATOR '&~&') AS PersonDescription\r\n" + 
 					"		FROM\r\n" + 
-					"			Person pe\r\n" + 
-					"		GROUP BY pe.ItemId\r\n" + 
-					"	) person ON person.ItemId = i.ItemId\r\n" + 
+					"			ItemPerson iperson \r\n" + 
+					"		JOIN Person pe ON iperson.PersonId = pe.PersonId\r\n" + 
+					"		WHERE iperson.ItemId = " + id +
+					"		GROUP BY iperson.ItemId\r\n" + 
+					"        ) person\r\n" + 
+					"        ON person.ItemId = i.ItemId" + 
 					"				LEFT JOIN\r\n" + 
-					"    Story s ON i.StoryId = s.StoryId\r\n" + 
-					"GROUP BY i.ItemId";
+					"    Story s ON i.StoryId = s.StoryId\r\n";
 			String resource = executeQuery(query, "Select");
-			ResponseBuilder rBuild = Response.ok(resource);
-			//ResponseBuilder rBuild = Response.ok(query);
+			*/
+            
+            String timeText = "Times: ";
+            long startTime = System.nanoTime();
+			
+			String itemQuery = "SELECT \r\n" + 
+					"    i.ItemId AS ItemId,\r\n" + 
+					"    i.Title AS Title,\r\n" + 
+					"    i.CompletionStatusId AS CompletionStatusId,\r\n" + 
+					"    coStatus.Name AS CompletionStatusName,\r\n" + 
+					"    coStatus.ColorCode AS CompletionStatusColorCode,\r\n" + 
+					"    i.TranscriptionStatusId AS TranscriptionStatusId,\r\n" + 
+					"    trStatus.Name AS TranscriptionStatusName,\r\n" + 
+					"    trStatus.ColorCode AS TranscriptionStatusColorCode,\r\n" + 
+					"    i.DescriptionStatusId AS DescriptionStatusId,\r\n" + 
+					"    deStatus.Name AS DescriptionStatusName,\r\n" + 
+					"    deStatus.ColorCode AS DescriptionStatusColorCode,\r\n" + 
+					"    i.LocationStatusId AS LocationStatusId,\r\n" + 
+					"    loStatus.Name AS LocationStatusName,\r\n" + 
+					"    loStatus.ColorCode AS LocationStatusColorCode,\r\n" + 
+					"    i.TaggingStatusId AS TaggingStatusId,\r\n" + 
+					"    taStatus.Name AS TaggingStatusName,\r\n" + 
+					"    taStatus.ColorCode AS TaggingStatusColorCode,\r\n" + 
+					"    i.AutomaticEnrichmentStatusId AS AutomaticEnrichmentStatusId,\r\n" + 
+					"    auStatus.Name AS AutomaticEnrichmentStatusName,\r\n" + 
+					"    auStatus.ColorCode AS AutomaticEnrichmentStatusColorCode,\r\n" + 
+					"    i.OldItemId AS OldItemId,\r\n" + 
+					"    i.Description AS Description,\r\n" + 
+					"    i.DescriptionLanguage AS DescriptionLanguage,\r\n" + 
+					"    i.DateStart AS DateStart,\r\n" + 
+					"    i.DateEnd AS DateEnd,\r\n" + 
+					"    i.DateStartDisplay AS DateStartDisplay,\r\n" + 
+					"    i.DateEndDisplay AS DateEndDisplay,\r\n" + 
+					"    i.DatasetId AS DatasetId,\r\n" + 
+					"    i.ImageLink AS ImageLink,\r\n" + 
+					"    i.OrderIndex AS OrderIndex,\r\n" + 
+					"    i.Timestamp AS Timestamp,\r\n" + 
+					"    i.LockedTime AS LockedTime,\r\n" + 
+					"    i.LockedUser AS LockedUser,\r\n" + 
+					"    i.Manifest AS Manifest,\r\n\r\n" + 
+					"    s.StoryId AS StoryId,\r\n" + 
+					"    s.`dc:title` AS StorydcTitle,\r\n" + 
+					"    s.`dc:description` AS StorydcDescription,\r\n" + 
+					"    s.`edm:landingPage` AS StoryedmLandingPage,\r\n" + 
+					"    s.ExternalRecordId AS StoryExternalRecordId,\r\n" + 
+					"    s.PlaceName AS StoryPlaceName,\r\n" + 
+					"    s.PlaceLatitude AS StoryPlaceLatitude,\r\n" + 
+					"    s.PlaceLongitude AS StoryPlaceLongitude,\r\n" + 
+					"    s.PlaceZoom AS StoryPlaceZoom,\r\n" + 
+					"    s.PlaceLink AS StoryPlaceLink,\r\n" + 
+					"    s.PlaceComment AS StoryPlaceComment,\r\n" + 
+					"    s.PlaceUserId AS StoryPlaceUserId,\r\n" + 
+					"    s.PlaceUserGenerated AS StoryPlaceUserGenerated,\r\n" + 
+					"    s.`dc:creator` AS StorydcCreator,\r\n" + 
+					"    s.`dc:source` AS StorydcSource,\r\n" + 
+					"    s.`edm:country` AS StoryedmCountry,\r\n" + 
+					"    s.`edm:dataProvider` AS StoryedmDataProvider,\r\n" + 
+					"    s.`edm:provider` AS StoryedmProvider,\r\n" + 
+					"    s.`edm:year` AS StoryedmYear,\r\n" + 
+					"    s.`dc:publisher` AS StorydcPublisher,\r\n" + 
+					"    s.`dc:coverage` AS StorydcCoverage,\r\n" + 
+					"    s.`dc:date` AS StorydcDate,\r\n" + 
+					"    s.`dc:type` AS StorydcType,\r\n" + 
+					"    s.`dc:relation` AS StorydcRelation,\r\n" + 
+					"    s.`dcterms:medium` AS StorydctermsMedium,\r\n" + 
+					"    s.`edm:datasetName` AS StoryedmDatasetName,\r\n" + 
+					"    s.`dc:contributor` AS StorydcContributor,\r\n" + 
+					"    s.`edm:rights` AS StoryedmRights,\r\n" + 
+					"    s.`edm:begin` AS StoryedmBegin,\r\n" + 
+					"    s.`edm:end` AS StoryedmEnd,\r\n" + 
+					"    s.`edm:isShownAt` AS StoryedmIsShownAt,\r\n" + 
+					"    s.`dc:Rights` AS StorydcRights,\r\n" + 
+					"    s.`dc:language` AS StorydcLanguage,\r\n" + 
+					"    s.`edm:language` AS StoryedmLanguage,\r\n" + 
+					"    s.ProjectId AS StoryProjectId,\r\n" + 
+					"    s.Summary AS StorySummary,\r\n" + 
+					"    s.ParentStory AS StoryParentStory,\r\n" + 
+					"    s.SearchText AS StorySearchText,\r\n" + 
+					"    s.DateStart AS StoryDateStart,\r\n" + 
+					"    s.DateEnd AS StoryDateEnd,\r\n" + 
+					"    s.OrderIndex AS StoryOrderIndex\r\n" +
+					"FROM\r\n" + 
+					"    (SELECT \r\n" + 
+					"        *\r\n" + 
+					"    FROM\r\n" + 
+					"        Item\r\n" + 
+					"    WHERE\r\n" + 
+					"        ItemId = " + id + ") i\r\n" + 
+					"        LEFT JOIN\r\n" + 
+					"    CompletionStatus coStatus ON i.CompletionStatusId = coStatus.CompletionStatusId\r\n" + 
+					"        LEFT JOIN\r\n" + 
+					"    CompletionStatus trStatus ON i.TranscriptionStatusId = trStatus.CompletionStatusId\r\n" + 
+					"        LEFT JOIN\r\n" + 
+					"    CompletionStatus deStatus ON i.DescriptionStatusId = deStatus.CompletionStatusId\r\n" + 
+					"        LEFT JOIN\r\n" + 
+					"    CompletionStatus loStatus ON i.LocationStatusId = loStatus.CompletionStatusId\r\n" + 
+					"        LEFT JOIN\r\n" + 
+					"    CompletionStatus taStatus ON i.TaggingStatusId = taStatus.CompletionStatusId\r\n" + 
+					"        LEFT JOIN\r\n" + 
+					"    CompletionStatus auStatus ON i.AutomaticEnrichmentStatusId = auStatus.CompletionStatusId\r\n" + 
+					"		 LEFT JOIN\r\n" + 
+					"    Story s ON i.StoryId = s.StoryId\r\n";
+			Item item = getItemData(itemQuery);
+
+			timeText += "itemData: " + ((System.nanoTime() - startTime) / 1000000);
+			startTime = System.nanoTime();
+
+			String transcriptionQuery = "SELECT \r\n" + 
+								"			t.ItemId,\r\n" + 
+								"			t.TranscriptionId AS TranscriptionId,\r\n" + 
+								"			t.Text AS Text,\r\n" + 
+								"			t.TextNoTags AS TextNoTags,\r\n" + 
+								"			t.UserId AS UserId,\r\n" + 
+								"			t.CurrentVersion + 0 AS CurrentVersion,\r\n" + 
+								"			t.Timestamp AS Timestamp,\r\n" + 
+								"			u.WP_UserId AS WP_UserId,\r\n" + 
+								"			IFNULL(t.EuropeanaAnnotationId, 'NULL') AS EuropeanaAnnotationId,\r\n" + 
+								"			t.NoText + 0 AS NoText,\r\n" + 
+								"    		IFNULL(l.LanguageId, 'NULL') AS LanguageId,\r\n" + 
+								"    		IFNULL(l.Name, 'NULL') AS LanguageName,\r\n" + 
+								"    		IFNULL(l.NameEnglish, 'NULL') AS LanguageNameEnglish,\r\n" + 
+								"    		IFNULL(l.ShortName, 'NULL') AS LanguageShortName,\r\n" + 
+								"    		IFNULL(l.Code, 'NULL') AS LanguageCode\r\n" + 
+								"		FROM Transcription t " +
+								"        LEFT JOIN\r\n" + 
+								"    	(SELECT \r\n" + 
+								"        	WP_UserId, UserId\r\n" + 
+								"    	FROM\r\n" + 
+								"        	User) u ON t.UserId = u.UserId\r\n" + 
+								"        LEFT JOIN\r\n" + 
+								"    	(" +
+								"			SELECT \r\n" + 
+								"        		tl.TranscriptionId,\r\n" + 
+								"            	GROUP_CONCAT(IFNULL(l.LanguageId, 'NULL') SEPARATOR '&~&') AS LanguageId,\r\n" + 
+								"            	GROUP_CONCAT(IFNULL(l.Name, 'NULL') SEPARATOR '&~&') AS Name,\r\n" + 
+								"            	GROUP_CONCAT(IFNULL(l.NameEnglish, 'NULL') SEPARATOR '&~&') AS NameEnglish,\r\n" + 
+								"            	GROUP_CONCAT(IFNULL(l.ShortName, 'NULL') SEPARATOR '&~&') AS ShortName,\r\n" + 
+								"            	GROUP_CONCAT(IFNULL(l.Code, 'NULL') SEPARATOR '&~&') AS Code\r\n" + 
+								"    		FROM\r\n" + 
+								"        		TranscriptionLanguage tl\r\n" + 
+								"    		JOIN Language l ON l.LanguageId = tl.LanguageId\r\n" + 
+								"    		WHERE tl.TranscriptionId IN (SELECT TranscriptionId FROM Transcription WHERE ItemId = " + id + ")" +
+								"    		GROUP BY tl.TranscriptionId" +	
+								"		) " +
+								"		l ON t.TranscriptionId = l.TranscriptionId " +
+								"		WHERE t.ItemId = " + id +
+								"		ORDER BY Timestamp DESC";
+			String transcriptionData = TranscriptionResponse.executeQuery(transcriptionQuery, "Select");				
+			Type transcriptionType = new TypeToken<List<Transcription>>(){}.getType();
+			List<Transcription> transcriptions = gson.fromJson(transcriptionData, transcriptionType);
+
+			timeText += ", transcriptionData: " + ((System.nanoTime() - startTime) / 1000000);
+			startTime = System.nanoTime();
+			
+			String propertyQuery = "SELECT \r\n" + 
+							"			ip.ItemId as ItemId,\r\n" + 
+							"			p.PropertyId AS PropertyId,\r\n" + 
+							"			pt.Name AS PropertyType,\r\n" + 
+							"			pt.PropertyTypeId AS PropertyTypeId,\r\n" + 
+							"			p.Value AS PropertyValue,\r\n" + 
+							"			null AS Motivation,\r\n" + 
+							"			null AS MotivationId,\r\n" + 
+							"			null AS Editable,\r\n" + 
+							"			null AS X_Coord,\r\n" + 
+							"			null AS Y_Coord,\r\n" + 
+							"			null AS Width,\r\n" + 
+							"			null AS Height,\r\n" + 
+							"			IFNULL(p.Description, 'NULL') AS PropertyDescription,\r\n" + 
+							"			pt.Editable + 0 AS PropertyEditable\r\n" + 
+							"		FROM\r\n" + 
+							"			ItemProperty ip\r\n" + 
+							"				LEFT JOIN\r\n" + 
+							"			Property p ON ip.PropertyId = p.PropertyId\r\n" + 
+							"				LEFT JOIN\r\n" + 
+							"			PropertyType pt ON p.PropertyTypeId = pt.PropertyTypeId\r\n" + 
+							"		WHERE ip.ItemId = " + id;
+			String propertyData = PropertyResponse.executeQuery(propertyQuery, "Select");		
+			Type propertyType = new TypeToken<List<Property>>(){}.getType();
+			List<Property> properties = gson.fromJson(propertyData, propertyType);
+			
+			timeText += ", propertyData: " + ((System.nanoTime() - startTime) / 1000000);
+			startTime = System.nanoTime();
+
+			String automatedEnrichmentQuery = "SELECT \r\n" + 
+							"			ae.ItemId,\r\n" + 
+							"			ae.AutomatedEnrichmentId AS AutomatedEnrichmentId,\r\n" + 
+							"			ae.Name  AS Name,\r\n" + 
+							"			ae.Type AS Type,\r\n" + 
+							"			ae.ExternalId AS ExternalId,\r\n" + 
+							"			IFNULL(ae.WikiData, 'NULL') AS WikiData\r\n" + 
+							"		FROM\r\n" + 
+							"			AutomatedEnrichment ae\r\n" + 
+							"		WHERE ae.ItemId =  " + id;
+			String automatedEnrichmentData = AutomatedEnrichmentResponse.executeQuery(automatedEnrichmentQuery, "Select");		
+			Type automatedEnrichmentType = new TypeToken<List<AutomatedEnrichment>>(){}.getType();
+			List<AutomatedEnrichment> automatedEnrichments = gson.fromJson(automatedEnrichmentData, automatedEnrichmentType);
+			
+			timeText += ", automatedEnrichmentData: " + ((System.nanoTime() - startTime) / 1000000);
+			startTime = System.nanoTime();
+			
+			String placeQuery = "SELECT \r\n" + 
+						"			pl.ItemId,\r\n" + 
+						"			null AS StoryId,\r\n" +
+						"			null AS Title,\r\n" + 
+						"			pl.PlaceId AS PlaceId,\r\n" + 
+						"			pl.Name AS Name,\r\n" + 
+						"			pl.Latitude AS Latitude,\r\n" + 
+						"			pl.Longitude AS Longitude,\r\n" + 
+						"			pl.Link AS Link,\r\n" + 
+						"			pl.Zoom AS Zoom,\r\n" + 
+						"			pl.Comment AS Comment,\r\n" + 
+						"			pl.UserId AS UserId,\r\n" + 
+						"			pl.UserGenerated + 0 AS UserGenerated,\r\n" + 
+						"			pl.WikidataName AS WikidataName,\r\n" + 
+						"			pl.WikidataId AS WikidataId\r\n" + 
+						"		FROM\r\n" + 
+						"			Place pl\r\n" + 
+						"		WHERE pl.ItemId = " + id;
+			String placeData = PlaceResponse.executeQuery(placeQuery, "Select");
+			Type placeType = new TypeToken<List<Place>>(){}.getType();
+			List<Place> places = gson.fromJson(placeData, placeType);
+			
+			timeText += ", placeData: " + ((System.nanoTime() - startTime) / 1000000);
+			startTime = System.nanoTime();
+			
+			String personQuery =  "	SELECT \r\n" + 
+							"			iperson.ItemId,\r\n" + 
+							"			pe.PersonId AS PersonId,\r\n" + 
+							"			IFNULL(pe.FirstName, 'NULL') AS FirstName,\r\n" + 
+							"			IFNULL(pe.LastName, 'NULL') AS LastName,\r\n" + 
+							"			IFNULL(pe.BirthPlace, 'NULL') AS BirthPlace,\r\n" + 
+							"			IFNULL(pe.BirthDate, 'NULL') AS BirthDate,\r\n" + 
+							"			IFNULL(pe.DeathPlace, 'NULL') AS DeathPlace,\r\n" + 
+							"			IFNULL(pe.DeathDate, 'NULL') AS DeathDate,\r\n" + 
+							"			IFNULL(pe.Link, 'NULL') AS Link,\r\n" + 
+							"			IFNULL(pe.Description, 'NULL') AS Description\r\n" + 
+							"		FROM\r\n" + 
+							"			ItemPerson iperson \r\n" + 
+							"		JOIN Person pe ON iperson.PersonId = pe.PersonId\r\n" + 
+							"		WHERE iperson.ItemId = " + id;
+			String personData = PersonResponse.executeQuery(personQuery, "Select");
+			Type personType = new TypeToken<List<Person>>(){}.getType();
+			List<Person> persons = gson.fromJson(personData, personType);
+			
+			timeText += ", personData: " + ((System.nanoTime() - startTime) / 1000000);
+			startTime = System.nanoTime();
+			
+
+
+
+			item.Properties = properties;
+			item.AutomatedEnrichments = automatedEnrichments;
+			item.Places = places;
+			item.Persons = persons;
+			item.Transcriptions = transcriptions;
+
+		    Gson gsonBuilder = new GsonBuilder().create();
+		    String result = gsonBuilder.toJson(item);
+
+			ResponseBuilder rBuild = Response.ok(result);
+			
+			timeText += ", Rest: " + ((System.nanoTime() - startTime) / 1000000);
+			File file = new File("/home/enrich/log/itemTiming/" + id + ".txt");
+			file.getParentFile().mkdirs();
+			FileWriter fileWriter = new FileWriter(file);
+			fileWriter.write(timeText);
+		    fileWriter.close();
+			//ResponseBuilder rBuild = Response.ok(transcriptionData);
 	        return rBuild.build();
 		}
 

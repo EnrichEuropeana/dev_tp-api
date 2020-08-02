@@ -12,8 +12,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
-import objects.Place;
-import objects.Property;
 import objects.Team;
 import objects.User;
 
@@ -32,6 +30,9 @@ public class TeamResponse {
 
 	public String executeQuery(String query, String type) throws SQLException{
 		   List<Team> teamList = new ArrayList<Team>();
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
@@ -44,13 +45,13 @@ public class TeamResponse {
 	            final String USER = prop.getProperty("USER");
 	            final String PASS = prop.getProperty("PASS");
 		   // Register JDBC driver
-				Class.forName("com.mysql.jdbc.Driver");
-				
-				   // Open a connection
-				   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
-				   // Execute SQL query
-				   Statement stmt = conn.createStatement();
 		   try {
+			Class.forName("com.mysql.jdbc.Driver");
+		
+		   // Open a connection
+		   conn = DriverManager.getConnection(DB_URL, USER, PASS);
+		   // Execute SQL query
+		   stmt = conn.createStatement();
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
 			   if (success > 0) {
@@ -64,7 +65,7 @@ public class TeamResponse {
 				   return type +" could not be executed";
 			   }
 		   }
-		   ResultSet rs = stmt.executeQuery(query);
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -103,25 +104,29 @@ public class TeamResponse {
 		   } catch(SQLException se) {
 		       //Handle errors for JDBC
 			   se.printStackTrace();
-		   } finally {
-			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
-			    try { conn.close(); } catch (Exception e) { /* ignored */ }
-		   }
+		   } catch (ClassNotFoundException e) {
+			   e.printStackTrace();
+		}  finally {
+		    try { rs.close(); } catch (Exception e) { /* ignored */ }
+		    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+		    try { conn.close(); } catch (Exception e) { /* ignored */ }
+	   }
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
 				e1.printStackTrace();
-			} catch (ClassNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
+			}  finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
+			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+			    try { conn.close(); } catch (Exception e) { /* ignored */ }
+		   }
 	    Gson gsonBuilder = new GsonBuilder().create();
 	    String result = gsonBuilder.toJson(teamList);
 	    return result;
 	}
 
 	//Search using custom filters
-	@Path("")
+	
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
@@ -165,7 +170,12 @@ public class TeamResponse {
 		    int valueCount = values.length;
 		    int i = 1;
 		    for(String value : values) {
-		    	query += key + " LIKE " + "'%" + value + "%'";
+		    	if (key.equals("UserId") || key.equals("WP_UserId")) {
+			    	query += key + " LIKE " + "'%," + value + "%' OR " + key + " LIKE " + "'%" + value + ",%'";
+		    	}
+		    	else {
+			    	query += key + " = " + value;
+		    	}
 			    if (i < valueCount) {
 			    	query += " OR ";
 			    }
@@ -182,7 +192,7 @@ public class TeamResponse {
 	
 
 	//Add new entry
-	@Path("")
+	
 	@POST
 	public Response add(String body, @Context UriInfo uriInfo) throws SQLException {	
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");

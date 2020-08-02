@@ -1,8 +1,6 @@
 package responses;
 
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -12,16 +10,18 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
-import objects.Annotation;
 import objects.Score;
 import objects.TranscriptionProfile;
 
 import java.util.*;
+import java.util.Date;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 import com.google.gson.*;
 
@@ -31,6 +31,9 @@ public class TranscriptionProfileResponse {
 
 	public String executeQuery(String query, String type) throws SQLException{
 		   List<TranscriptionProfile> transcriptionProfileList = new ArrayList<TranscriptionProfile>();
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
@@ -46,9 +49,9 @@ public class TranscriptionProfileResponse {
 				Class.forName("com.mysql.jdbc.Driver");
 				
 				   // Open a connection
-				   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+				   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 				   // Execute SQL query
-				   Statement stmt = conn.createStatement();
+				   stmt = conn.createStatement();
 		   try {
 		   if (type != "Select") {
 			   int success = stmt.executeUpdate(query);
@@ -63,13 +66,23 @@ public class TranscriptionProfileResponse {
 				   return type +" could not be executed";
 			   }
 		   }
-		   ResultSet rs = stmt.executeQuery(query);
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
 		      //Retrieve by column name
 			  TranscriptionProfile transcriptionProfile = new TranscriptionProfile();
-			  transcriptionProfile.setTimestamp(rs.getTimestamp("Timestamp"));
+			  // String to Timestamp conversion
+			  try {
+		            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		            Date date = formatter.parse(rs.getString("Timestamp"));
+		            Timestamp timeStampDate = new Timestamp(date.getTime());
+		            transcriptionProfile.setTimestamp(timeStampDate);
+	
+		        } catch (ParseException e) {
+		            System.out.println("Exception :" + e);
+		            return null;
+		        }
 			  transcriptionProfile.setItemId(rs.getInt("ItemId"));
 			  transcriptionProfile.setItemTitle(rs.getString("ItemTitle"));
 			  transcriptionProfile.setItemImageLink(rs.getString("ItemImageLink"));
@@ -103,9 +116,10 @@ public class TranscriptionProfileResponse {
 		       //Handle errors for JDBC
 			   se.printStackTrace();
 		   } finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
 			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
 			    try { conn.close(); } catch (Exception e) { /* ignored */ }
-		   }
+		    }
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
@@ -113,7 +127,11 @@ public class TranscriptionProfileResponse {
 			} catch (ClassNotFoundException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
-			}
+			} finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
+			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+			    try { conn.close(); } catch (Exception e) { /* ignored */ }
+		    }
 	    Gson gsonBuilder = new GsonBuilder().create();
 	    String result = gsonBuilder.toJson(transcriptionProfileList);
 	    return result;

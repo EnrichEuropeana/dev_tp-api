@@ -1,7 +1,5 @@
 package objects;
 
-import java.sql.Timestamp;
-
 public class Annotation {
 	public Integer AnnotationId;
 	public String Text;

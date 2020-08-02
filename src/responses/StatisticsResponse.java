@@ -1,10 +1,7 @@
 package responses;
 
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
@@ -19,13 +16,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
 
-import com.google.gson.*;
-
 @Path("/statistics")
 public class StatisticsResponse {
 
 
 	public String executeNumberQuery(String query, String type) throws SQLException{
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 				Properties prop = new Properties();
@@ -42,11 +40,11 @@ public class StatisticsResponse {
 				Class.forName("com.mysql.jdbc.Driver");
 				
 				// Open a connection
-			    Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+			    conn = DriverManager.getConnection(DB_URL, USER, PASS);
 			    // Execute SQL query
-			    Statement stmt = conn.createStatement();
+			    stmt = conn.createStatement();
 			    try {
-				    ResultSet rs = stmt.executeQuery(query);
+				    rs = stmt.executeQuery(query);
 				    if(rs.next() == false){
 					    rs.close();
 		 			    stmt.close();
@@ -64,18 +62,22 @@ public class StatisticsResponse {
 				} catch(SQLException se) {
 				    se.printStackTrace();
 				    return "";
-				} finally {
-					// Close connections in case of errors
+				}  finally {
+				    try { rs.close(); } catch (Exception e) { /* ignored */ }
 				    try { stmt.close(); } catch (Exception e) { /* ignored */ }
 				    try { conn.close(); } catch (Exception e) { /* ignored */ }
-			    }
+			   }
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			} catch (ClassNotFoundException e1) {
 				e1.printStackTrace();
-			}
+			}  finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
+			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+			    try { conn.close(); } catch (Exception e) { /* ignored */ }
+		   }
 	    // Build Json from query results
 	    return "0";
 	}
@@ -85,7 +87,14 @@ public class StatisticsResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response characters(@Context UriInfo uriInfo) throws SQLException {
-		String query = "SELECT SUM(Amount) as Amount FROM Score WHERE ScoreTypeId = 2";
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		String query = "SELECT SUM(Amount) as Amount FROM Score WHERE ScoreTypeId = 2 ";
+		if (queryParams.containsKey("dateStart")) {
+			query +=  " AND Timestamp >= '" + queryParams.getFirst("dateStart") + "' ";
+		}
+		if (queryParams.containsKey("dateEnd")) {
+			query +=  " AND Timestamp <= '" + queryParams.getFirst("dateEnd") + "' ";
+		}
 		String result = executeNumberQuery(query, "Select");
 
 		ResponseBuilder rBuild = Response.ok(result);

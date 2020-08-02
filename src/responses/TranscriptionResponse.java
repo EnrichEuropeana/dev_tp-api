@@ -13,7 +13,6 @@ import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
 import objects.Language;
-import objects.Property;
 import objects.Transcription;
 
 import java.util.*;
@@ -30,8 +29,11 @@ import com.google.gson.*;
 public class TranscriptionResponse {
 
 
-	public String executeQuery(String query, String type) throws SQLException, ParseException{
+	public static String executeQuery(String query, String type) throws SQLException, ParseException{
 		   List<Transcription> transcriptionList = new ArrayList<Transcription>();
+		   ResultSet rs = null;
+		   Connection conn = null;
+		   Statement stmt = null;
 	       try (InputStream input = new FileInputStream("/home/enrich/tomcat/apache-tomcat-9.0.13/webapps/dev_tp-api/WEB-INF/config.properties")) {
 
 	            Properties prop = new Properties();
@@ -47,9 +49,9 @@ public class TranscriptionResponse {
 				Class.forName("com.mysql.jdbc.Driver");
 				
 				   // Open a connection
-				   Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+				   conn = DriverManager.getConnection(DB_URL, USER, PASS);
 				   // Execute SQL query
-				   Statement stmt = conn.createStatement();
+				   stmt = conn.createStatement();
 		   try {
 		   if (type != "Select") {
 
@@ -103,7 +105,7 @@ public class TranscriptionResponse {
 				   return type +" could not be executed";
 			   }
 		   }
-		   ResultSet rs = stmt.executeQuery(query);
+		   rs = stmt.executeQuery(query);
 		   
 		   // Extract data from result set
 		   while(rs.next()){
@@ -117,7 +119,9 @@ public class TranscriptionResponse {
 			  transcription.setWP_UserId(rs.getInt("WP_UserId"));
 			  transcription.setItemId(rs.getInt("ItemId"));
 			  transcription.setCurrentVersion(rs.getString("CurrentVersion"));
-			  transcription.setEuropeanaAnnotationId(rs.getInt("EuropeanaAnnotationId"));
+			  if (!rs.getString("EuropeanaAnnotationId").equals("NULL")) {
+				  transcription.setEuropeanaAnnotationId(rs.getInt("EuropeanaAnnotationId"));
+			  }
 			  transcription.setNoText(rs.getString("NoText"));
 
 			  // Add Languages
@@ -129,6 +133,9 @@ public class TranscriptionResponse {
 				  String[] LanguageShortNames = rs.getString("LanguageShortName").split("&~&");
 				  String[] LanguageCodes = rs.getString("LanguageCode").split("&~&");
 				  for (int i = 0; i < LanguageIds.length; i++) {
+					  if (LanguageIds[i].equals("NULL")) {
+						  continue;
+					  }
 					  Language language = new Language();
 					  language.setLanguageId(Integer.parseInt(LanguageIds[i]));
 					  language.setName(LanguageNames[i]);
@@ -149,7 +156,8 @@ public class TranscriptionResponse {
 		   } catch(SQLException se) {
 		       //Handle errors for JDBC
 			   se.printStackTrace();
-		   } finally {
+		   }  finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
 			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
 			    try { conn.close(); } catch (Exception e) { /* ignored */ }
 		   }
@@ -160,14 +168,18 @@ public class TranscriptionResponse {
 			} catch (ClassNotFoundException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
-			}
+			}  finally {
+			    try { rs.close(); } catch (Exception e) { /* ignored */ }
+			    try { stmt.close(); } catch (Exception e) { /* ignored */ }
+			    try { conn.close(); } catch (Exception e) { /* ignored */ }
+		   }
 	    Gson gsonBuilder = new GsonBuilder().create();
 	    String result = gsonBuilder.toJson(transcriptionList);
 	    return result;
 	}
 
 	//Get entries
-	@Path("")
+	
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException, ParseException {		
@@ -269,9 +281,9 @@ public class TranscriptionResponse {
 	}
 	
 	//Add new entry
-	@Path("")
+	
 	@POST
-	public Response add(String body) throws SQLException, ParseException {	
+	public Response add(String body) throws SQLException, ParseException, IOException {	
 	    GsonBuilder gsonBuilder = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss");
 	    Gson gson = gsonBuilder.create();
 	    Transcription transcription = gson.fromJson(body, Transcription.class);
@@ -308,6 +320,12 @@ public class TranscriptionResponse {
 								+ ", " + transcription.Languages.get(i).LanguageId + ")", "Insert");
 				}
 			};
+			String updateTimestampQuery = "UPDATE Item SET LastUpdated = NOW() WHERE ItemId = " + transcription.ItemId;
+			executeQuery(updateTimestampQuery, "Update");
+			String updateStoryTimestampQuery = "UPDATE Story SET LastUpdated = NOW() WHERE StoryId = (SELECT StoryId FROM Item WHERE ItemId = " + transcription.ItemId + ")";
+			executeQuery(updateStoryTimestampQuery, "Update");
+			StoryResponse.solrUpdate();
+			
 			ResponseBuilder rBuild = Response.ok(resource);
 	        return rBuild.build();
 	    } else {
