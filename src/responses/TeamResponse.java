@@ -171,7 +171,7 @@ public class TeamResponse {
 		    int i = 1;
 		    for(String value : values) {
 		    	if (key.equals("UserId") || key.equals("WP_UserId")) {
-			    	query += key + " LIKE " + "'%," + value + "%' OR " + key + " LIKE " + "'%" + value + ",%'";
+			    	query += " FIND_IN_SET('" + value + "', " + key + ")";
 		    	}
 		    	else {
 			    	query += key + " = " + value;
