@@ -257,7 +257,7 @@ public class PlaceResponse {
 				"					(\r\n" + 
 				"						SELECT null, PlaceName, PlaceLatitude, PlaceLongitude, null, StoryId, `dc:title`, null, PlaceZoom, null, null, null, null, null\r\n" + 
 				"						FROM Story\r\n" + 
-				"						WHERE StoryId = (SELECT StoryId FROM Item WHERE ItemId = " + id + ")" +
+				"						WHERE StoryId = (SELECT StoryId FROM Item WHERE ItemId = " + id + ") AND PlaceLatitude is not null" +
 				"					)";
 		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
