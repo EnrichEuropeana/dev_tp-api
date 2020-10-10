@@ -24,6 +24,8 @@ import java.sql.*;
 
 import com.google.gson.*;
 
+import Utilities.Util;
+
 @Path("/teams")
 public class TeamResponse {
 
@@ -71,17 +73,25 @@ public class TeamResponse {
 		   while(rs.next()){
 			  // Add Users
 			  List<User> UserList = new ArrayList<User>();
-			  if (rs.getString("UserId") != null) {
+			  if (Util.hasColumn(rs, "UserId") && rs.getString("UserId") != null) {
 				  String[] UserIds = rs.getString("UserId").split(",");
 				  String[] WP_UserIds = rs.getString("WP_UserId").split(",");
 				  String[] Roles = rs.getString("Role").split(",");
 				  String[] WP_Roles = rs.getString("WP_Role").split(",");
+				  String[] Locations = rs.getString("Locations").split(",");
+				  String[] Characters = rs.getString("Characters").split(",");
+				  String[] Enrichments = rs.getString("Enrichments").split(",");
+				  String[] Miles = rs.getString("Miles").split(",");
 				  for (int i = 0; i < UserIds.length; i++) {
 					  User user = new User();
 					  user.setUserId(Integer.parseInt(UserIds[i]));
 					  user.setWP_UserId(Integer.parseInt(WP_UserIds[i]));
 					  user.setRole(Roles[i]);
 					  user.setWP_Role(WP_Roles[i]);
+					  user.setLocations(Integer.parseInt(Locations[i]));
+					  user.setCharacters(Integer.parseInt(Characters[i]));
+					  user.setEnrichments(Integer.parseInt(Enrichments[i]));
+					  user.setMiles(Double.parseDouble(Miles[i]));
 					  UserList.add(user);
 				  }
 			  }
@@ -94,6 +104,9 @@ public class TeamResponse {
 			  team.setShortName(rs.getString("ShortName"));
 			  team.setCode(rs.getString("Code"));
 			  team.setDescription(rs.getString("Description"));
+			  if (Util.hasColumn(rs, "ItemCount")) {
+				  team.setItemCount(rs.getInt("ItemCount"));
+			  }
 			  teamList.add(team);
 		   }
 		
@@ -126,7 +139,7 @@ public class TeamResponse {
 	}
 
 	//Search using custom filters
-	
+
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo) throws SQLException {
@@ -141,7 +154,11 @@ public class TeamResponse {
 				"    UserId AS UserId,\r\n" + 
 				"    WP_UserId AS WP_UserId,\r\n" + 
 				"    Role AS Role,\r\n" + 
-				"    WP_Role AS WP_Role\r\n" + 
+				"    WP_Role AS WP_Role,\r\n" + 
+				"    Locations AS Locations,\r\n" + 
+				"    Characters AS Characters,\r\n" + 
+				"    Enrichments AS Enrichments,\r\n" + 
+				"    Miles AS Miles " + 
 				"FROM\r\n" + 
 				"    Team t\r\n" + 
 				"        LEFT JOIN\r\n" + 
@@ -151,7 +168,11 @@ public class TeamResponse {
 				"			group_concat(u.UserId) as UserId, \r\n" + 
 				"			group_concat(u.WP_UserId) as WP_UserId, \r\n" + 
 				"			group_concat(r.Name) as Role, \r\n" + 
-				"			group_concat(u.WP_Role) as WP_Role\r\n" + 
+				"			group_concat(u.WP_Role) as WP_Role, \r\n" + 
+				"            group_concat(IFNULL((SELECT sum(Amount) FROM Score WHERE UserId = u.UserId AND ScoreTypeId = 1), 0)) as Locations,\r\n" + 
+				"            group_concat(IFNULL((SELECT sum(Amount) FROM Score WHERE UserId = u.UserId AND ScoreTypeId = 2), 0)) as Characters,\r\n" + 
+				"            group_concat(IFNULL((SELECT sum(Amount) FROM Score WHERE UserId = u.UserId AND (ScoreTypeId = 3 OR ScoreTypeId = 4)), 0)) as Enrichments,\r\n" + 
+				"            group_concat(IFNULL(ROUND((SELECT sum(Amount * Rate) FROM Score s JOIN ScoreType st ON s.ScoreTypeId = st.ScoreTypeId WHERE UserId = u.UserId), 2), 0)) as Miles" + 
 				"		FROM TeamUser tu \r\n" + 
 				"			JOIN\r\n" + 
 				"		User u ON tu.UserId = u.UserId\r\n" + 
@@ -265,9 +286,73 @@ public class TeamResponse {
 	@Path("/{id}")
 	@Produces("application/json;charset=utf-8")
 	@GET
-	public Response getEntry(@PathParam("id") int id) throws SQLException {
-		String resource = executeQuery("SELECT * FROM Team WHERE TeamId = " + id, "Select");
+	public Response getEntry(@PathParam("id") int id, @Context UriInfo uriInfo) throws SQLException {
+		String query = "SELECT * FROM " + 
+				"( " +
+				"SELECT \r\n" + 
+				"    t.TeamId AS TeamId,\r\n" + 
+				"    t.Name AS Name,\r\n" + 
+				"    t.ShortName AS ShortName,\r\n" + 
+				"    t.Description AS Description,\r\n" + 
+				"    t.Code AS Code,\r\n" + 
+				"    UserId AS UserId,\r\n" + 
+				"    WP_UserId AS WP_UserId,\r\n" + 
+				"    Role AS Role,\r\n" + 
+				"    WP_Role AS WP_Role,\r\n" + 
+				"    Locations AS Locations,\r\n" + 
+				"    Characters AS Characters,\r\n" + 
+				"    Enrichments AS Enrichments,\r\n" + 
+				"    Miles AS Miles, " + 
+				"	 (SELECT count(*) FROM (SELECT DISTINCT(ItemId) FROM Score WHERE UserId IN (SELECT UserId FROM TeamUser WHERE TeamId = " + id + ")) a) as ItemCount " + 
+				"FROM\r\n" + 
+				"    Team t\r\n" + 
+				"        LEFT JOIN\r\n" + 
+				"	(\r\n" + 
+				"		SELECT \r\n" + 
+				"			tu.TeamId,\r\n" + 
+				"			group_concat(u.UserId) as UserId, \r\n" + 
+				"			group_concat(u.WP_UserId) as WP_UserId, \r\n" + 
+				"			group_concat(r.Name) as Role, \r\n" + 
+				"			group_concat(u.WP_Role) as WP_Role, \r\n" + 
+				"            group_concat(IFNULL((SELECT sum(Amount) FROM Score WHERE UserId = u.UserId AND ScoreTypeId = 1), 0)) as Locations,\r\n" + 
+				"            group_concat(IFNULL((SELECT sum(Amount) FROM Score WHERE UserId = u.UserId AND ScoreTypeId = 2), 0)) as Characters,\r\n" + 
+				"            group_concat(IFNULL((SELECT sum(Amount) FROM Score WHERE UserId = u.UserId AND (ScoreTypeId = 3 OR ScoreTypeId = 4)), 0)) as Enrichments,\r\n" + 
+				"            group_concat(IFNULL(ROUND((SELECT sum(Amount * Rate) FROM Score s JOIN ScoreType st ON s.ScoreTypeId = st.ScoreTypeId WHERE UserId = u.UserId), 2), 0)) as Miles " +
+				"		FROM TeamUser tu \r\n" + 
+				"			JOIN\r\n" + 
+				"		User u ON tu.UserId = u.UserId\r\n" + 
+				"			JOIN\r\n" + 
+				"		Role r ON u.RoleId = r.RoleId\r\n" + 
+				"        GROUP BY tu.TeamId\r\n" + 
+				"	) u ON t.TeamId = u.TeamId\r\n " +
+				") a " + 
+				"WHERE\r\n" + 
+				"    TeamId = " + id;
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		
+		for(String key : queryParams.keySet()){
+			String[] values = queryParams.getFirst(key).split(",");
+			query += " AND (";
+		    int valueCount = values.length;
+		    int i = 1;
+		    for(String value : values) {
+		    	if (key.equals("UserId") || key.equals("WP_UserId")) {
+			    	query += " FIND_IN_SET('" + value + "', " + key + ")";
+		    	}
+		    	else {
+			    	query += key + " = " + value;
+		    	}
+			    if (i < valueCount) {
+			    	query += " OR ";
+			    }
+			    i++;
+		    }
+		    query += ")";
+		}
+		query += " ORDER BY TeamId DESC";
+		String resource = executeQuery(query, "Select");
 		ResponseBuilder rBuild = Response.ok(resource);
+		//ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
 

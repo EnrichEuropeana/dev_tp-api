@@ -9,6 +9,7 @@ public class Team {
 	public String Code; 
 	public String Description;
 	public List<User> Users;
+	public Integer ItemCount;
 	
 	public void setTeamId (Integer TeamId) {
 		this.TeamId = TeamId;
@@ -32,4 +33,9 @@ public class Team {
 	public void setUsers(List<User> users) {
 		Users = users;
 	}
+
+	public void setItemCount(Integer itemCount) {
+		ItemCount = itemCount;
+	}
+	
 }

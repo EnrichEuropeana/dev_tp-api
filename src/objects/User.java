@@ -10,6 +10,10 @@ public class User {
 	public String Role; 
 	public Timestamp Timestamp;
 	public String Token;
+	public Double Miles;
+	public Integer Locations;
+	public Integer Characters;
+	public Integer Enrichments;
 
 	public void setUserId(Integer userId) {
 		UserId = userId;
@@ -31,6 +35,19 @@ public class User {
 	}
 	public void setToken(String token) {
 		Token = token;
+	}
+	public void setMiles(Double miles) {
+		Miles = miles;
+	}
+	public void setLocations(Integer locations) {
+		Locations = locations;
+	}
+	public void setCharacters(Integer characters) {
+		Characters = characters;
+	}
+	public void setEnrichments(Integer enrichments) {
+		Enrichments = enrichments;
 	} 
+	
 	
 }
