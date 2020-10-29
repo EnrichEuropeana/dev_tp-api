@@ -109,14 +109,15 @@ public class StatisticsResponse {
 	@GET
 	public Response charactersByDataSet(@PathParam("id") int id, @Context UriInfo uriInfo) throws SQLException {
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-		String query = "SELECT SUM(Amount) as Amount FROM Score s " +
+		String query = "SELECT IFNULL(SUM(Amount), 0) as Amount FROM Score s " +
 						" JOIN Item i ON s.ItemId = i.ItemId " +
-						" JOIN Campaign c ON i.DatasetId = c.DatasetId OR s.Timestamp BETWEEN c.Start AND c.End " +
+						" JOIN Story st ON st.StoryId = i.StoryId " +
+						" JOIN Campaign c ON (st.DatasetId = c.DatasetId OR c.DatasetId is null) AND s.Timestamp BETWEEN c.Start AND c.End " +
 						" WHERE ScoreTypeId = 2 AND c.CampaignId = " + id;
 		String result = executeNumberQuery(query, "Select");
 
-		ResponseBuilder rBuild = Response.ok(result);
-		//ResponseBuilder rBuild = Response.ok(query);
+		//ResponseBuilder rBuild = Response.ok(result);
+		ResponseBuilder rBuild = Response.ok(query);
         return rBuild.build();
 	}
 
