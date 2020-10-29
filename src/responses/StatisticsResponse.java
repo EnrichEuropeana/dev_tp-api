@@ -2,6 +2,7 @@ package responses;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
@@ -95,6 +96,23 @@ public class StatisticsResponse {
 		if (queryParams.containsKey("dateEnd")) {
 			query +=  " AND Timestamp <= '" + queryParams.getFirst("dateEnd") + "' ";
 		}
+		String result = executeNumberQuery(query, "Select");
+
+		ResponseBuilder rBuild = Response.ok(result);
+		//ResponseBuilder rBuild = Response.ok(query);
+        return rBuild.build();
+	}
+
+	// Total transcribed characters
+	@Path("/characters/campaign/{id}")
+	@Produces("application/json;charset=utf-8")
+	@GET
+	public Response charactersByDataSet(@PathParam("id") int id, @Context UriInfo uriInfo) throws SQLException {
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		String query = "SELECT SUM(Amount) as Amount FROM Score s " +
+						" JOIN Item i ON s.ItemId = i.ItemId " +
+						" JOIN Campaign c ON i.DatasetId = c.DatasetId OR s.Timestamp BETWEEN c.Start AND c.End " +
+						" WHERE ScoreTypeId = 2 AND c.CampaignId = " + id;
 		String result = executeNumberQuery(query, "Select");
 
 		ResponseBuilder rBuild = Response.ok(result);
