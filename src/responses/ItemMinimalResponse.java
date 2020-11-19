@@ -117,20 +117,24 @@ public class ItemMinimalResponse {
 	@Produces("application/json;charset=utf-8")
 	@GET
 	public Response search(@Context UriInfo uriInfo, String body, @Context HttpHeaders headers) throws SQLException {	
-		String query = "SELECT "
-				+ "ItemId, "
-				+ "StoryId, "
-				+ "ImageLink, "
-				+ "Title, "
-				+ "DatasetId, "
-				+ "CompletionStatusId, "
-				+ "TranscriptionStatusId, "
-				+ "DescriptionStatusId, "
-				+ "LocationStatusId, "
-				+ "TaggingStatusId, "
-				+ "AutomaticEnrichmentStatusId "
-				+ "FROM Item  "
-				+ "WHERE 1";
+		String query = "SELECT * FROM "
+				+ "("
+				+ "SELECT "
+				+ " i.ItemId as ItemId,\r\n"
+				+ " i.StoryId as StoryId,\r\n"
+				+ " i.ImageLink as ImageLink,\r\n"
+				+ " i.Title as Title,\r\n"
+				+ " sto.DatasetId as DatasetId,\r\n"
+				+ " i.CompletionStatusId as CompletionStatusId,\r\n"
+				+ " i.TranscriptionStatusId as TranscriptionStatusId,\r\n"
+				+ " i.DescriptionStatusId as DescriptionStatusId,\r\n"
+				+ " i.LocationStatusId as LocationStatusId,\r\n"
+				+ " i.TaggingStatusId as TaggingStatusId,\r\n"
+				+ " i.AutomaticEnrichmentStatusId as AutomaticEnrichmentStatusId\r\n"
+				+ " FROM Item i\r\n"
+				+ " JOIN Story sto ON i.StoryId = sto.StoryId\r\n"
+				+ " ) a " 
+				+ " WHERE 1";
 		
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		
