@@ -312,8 +312,8 @@ public class PlaceResponse {
 	    				+ "SET Name = '" + changes.Name + "', "
    	    				 + "Latitude = " + changes.Latitude + ", "
  	    				 + "Longitude = " + changes.Longitude + ", "
-  	    				 + "Comment = " + changes.Comment + ", "
-   	    				 + "WikidataId = " + changes.WikidataId + ", "
+  	    				 + "Comment = '" + changes.Comment + "', "
+   	    				 + "WikidataId = '" + changes.WikidataId + "', "
 	    				 + "WikidataName = '" + changes.WikidataName + "' ";
 		query += " WHERE PlaceId = " + id;
 		String resource = executeQuery(query, "Update");
